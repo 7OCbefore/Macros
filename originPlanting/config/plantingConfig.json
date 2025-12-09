@@ -1,0 +1,30 @@
+{
+  "defaultStartPos": [220, 56, 330],
+  "defaultEndPos": [276, 56, 329],
+  "chests": {
+    "soil": {
+      "pos": [220, 55, 397],
+      "dumpPos": [220, 58, 398]
+    },
+    "fertilizer": {
+      "pos": [221, 55, 397],
+      "dumpPos": [222, 58, 399]
+    },
+    "seeds": {
+      "pos": [220, 55, 397],
+      "dumpPos": [220, 57, 398]
+    }
+  },
+  "items": {
+    "soil": "minecraft:paper",
+    "fertilizer": "minecraft:paper",
+    "seeds": "minecraft:paper",
+    "transferIgnore": ["minecraft:air"]
+  },
+  "settings": {
+    "refillThreshold": 6,
+    "refillWaitTicks": 16,
+    "fertilizeWaitTicks": 1,
+    "stepSize": 5
+  }
+}
