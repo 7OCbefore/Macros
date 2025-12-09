@@ -10,7 +10,9 @@ const Config = {
     CHEST_WAIT_TICKS: 34,
     INV_CLOSE_WAIT_TICKS: 6,
     MOVE_WAIT_TICKS: 1,
-    ATTACK_WAIT_TICKS: 1
+    ATTACK_WAIT_TICKS: 1,
+    REFILL_WAIT_TICKS: 10, // Default refill wait
+    ACTION_WAIT_TICKS: 1   // Default action wait
 };
 
 // --- 文件操作帮助 ---
@@ -185,7 +187,7 @@ function checkAndRefillItem(chestPos, itemId, threshold = 6, state) {
         
         if (bestSlot !== -1) {
             inv.swapHotbar(bestSlot, hotbarIndex);
-            Client.waitTick(10);
+            Client.waitTick(Config.REFILL_WAIT_TICKS);
             return;
         }
     }
@@ -303,7 +305,7 @@ function snakeWalk(startPos, endPos, chestPos, itemId, actionCallback, state) {
                     Chat.log(`§c[Action] Error at ${localX},${z}: ${e}`);
                 }
                 
-                Client.waitTick(1); // 动作后短暂等待
+                Client.waitTick(Config.ACTION_WAIT_TICKS); // 动作后短暂等待
             }
         }
         currentX += stepSize * xStep;
