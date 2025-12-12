@@ -1,30 +1,59 @@
 {
-  "defaultStartPos": [220, 56, 330],
-  "defaultEndPos": [276, 56, 329],
+  "positions": {
+    "cropEnd": [276, 56, 329],
+    "defaultStart": [220, 56, 330]
+  },
   "chests": {
     "soil": {
-      "pos": [220, 55, 397],
-      "dumpPos": [220, 58, 398]
+      "supply": [220, 55, 397],
+      "dump": [220, 58, 398]
     },
     "fertilizer": {
-      "pos": [221, 55, 397],
-      "dumpPos": [222, 58, 399]
+      "supply": [221, 55, 397],
+      "dump": [222, 58, 399]
     },
     "seeds": {
-      "pos": [220, 55, 397],
-      "dumpPos": [220, 57, 398]
+      "supply": [220, 55, 397],
+      "dump": [220, 57, 398]
     }
   },
   "items": {
-    "soil": "minecraft:paper",
-    "fertilizer": "minecraft:paper",
-    "seeds": "minecraft:paper",
-    "transferIgnore": ["minecraft:air"]
+    "soil": "minecraft:dirt",
+    "fertilizer": "minecraft:bone_meal",
+    "seeds": "minecraft:wheat_seeds",
+    "refillTrigger": "minecraft:paper",
+    "transferList": ["minecraft:paper"]
   },
-  "settings": {
-    "refillThreshold": 6,
+  "keybindings": {
+    "close": "key.keyboard.x",
+    "pause": "key.keyboard.z",
+    "sprint": "key.forward",
+    "forward": "key.sprint",
+    "rightClick": "key.mouse.right",
+    "leftClick": "key.mouse.left",
+    "modeSoil": "key.keyboard.1",
+    "modeFertilize": "key.keyboard.2",
+    "modePlant": "key.keyboard.3"
+  },
+  "timings": {
+    "containerWaitTimeout": 100,
+    "eatWaitTicks": 66,
+    "postEatWaitTicks": 20,
+    "chestWaitTicks": 34,
+    "invCloseWaitTicks": 6,
+    "attackWaitTicks": 1,
+    "moveWaitTicks": 1,
     "refillWaitTicks": 16,
-    "fertilizeWaitTicks": 1,
-    "stepSize": 5
+    "fertilizeWaitTicks": 1
+  },
+  "thresholds": {
+    "stepSize": 5,
+    "refillThreshold": 6,
+    "foodLevel": 20,
+    "playerReach": 3
+  },
+  "constants": {
+    "maxInventorySlots": 36,
+    "maxStackSize": 64
   }
 }
