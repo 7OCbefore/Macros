@@ -18,9 +18,9 @@
     }
   },
   "items": {
-    "soil": "minecraft:dirt",
-    "fertilizer": "minecraft:bone_meal",
-    "seeds": "minecraft:wheat_seeds",
+    "soil": "minecraft:paper",
+    "fertilizer": "minecraft:paper",
+    "seeds": "minecraft:paper",
     "refillTrigger": "minecraft:paper",
     "transferList": ["minecraft:paper"]
   },
