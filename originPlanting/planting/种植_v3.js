@@ -57,8 +57,8 @@ class PlantingApplication {
      * Load and validate configuration
      * @private
      */
-    _loadConfiguration() {
-        this._config = ConfigLoader.load('./config/plantingConfig.json');
+        _loadConfiguration() {
+            this._config = ConfigLoader.load('../config/plantingConfig.json');
         
         if (!this._config) {
             throw new Error('Failed to load plantingConfig.json');

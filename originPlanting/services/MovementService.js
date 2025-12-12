@@ -4,7 +4,7 @@
  * @version 3.0.0
  */
 
-const Point3D = require('./Point3D.js');
+const Point3D = require('../core/Point3D.js');
 
 class MovementService {
     constructor(config) {
