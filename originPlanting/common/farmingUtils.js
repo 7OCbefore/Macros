@@ -1,4 +1,5 @@
 // farmingUtils.js - 农场自动化脚本公共模块 (Refactored)
+const { distanceCache } = require('../vending/modules/DistanceCache.js');
 
 // --- 配置常量 ---
 const Config = {
@@ -83,20 +84,30 @@ function waitIfPaused(state) {
 function moveToBlock(x, y, z, tolerance = 3) {
     const player = Player.getPlayer();
     
-    // 简单的防抖，如果已经很近了就不动
-    if (player.distanceTo(x, y, z) <= tolerance) return;
+    // Use distance cache for performance
+    const playerX = player.getX();
+    const playerY = player.getY();
+    const playerZ = player.getZ();
+    
+    // Simple anti-jitter, if already close enough don't move
+    const distance = distanceCache.getDistance(playerX, playerY, playerZ, x, y, z);
+    if (distance <= tolerance) return;
 
     player.lookAt(x, y, z);
     
-    // 初始距离检查
-    let distance = player.distanceTo(x, y, z);
-    let timeout = 500; // 防止卡死
+    // Initial distance check
+    let currentDistance = distanceCache.getDistance(playerX, playerY, playerZ, x, y, z);
+    let timeout = 500; // Prevent deadlock
 
-    while (distance > tolerance && timeout > 0) {
-        waitIfPaused({ isPaused: false }); // 这里简单传入假状态，实际应传入全局状态，但 moveToBlock 通常是原子的
+    while (currentDistance > tolerance && timeout > 0) {
+        waitIfPaused({ isPaused: false }); // Simple pause check
 
         player.lookAt(x, y, z);
-        distance = player.distanceTo(x, y, z);
+        // Update distance using cache
+        currentDistance = distanceCache.getDistance(
+            player.getX(), player.getY(), player.getZ(), 
+            x, y, z
+        );
         
         KeyBind.keyBind("key.forward", true);
         KeyBind.keyBind("key.sprint", true);
