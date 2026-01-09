@@ -93,7 +93,7 @@ class VendingScheduler {
             return null;
         }
 
-        const timeRegex = /(\\d{1,2}):(\\d{2}) (AM|PM)/i;
+        const timeRegex = /(\d{1,2}):(\d{2}) (AM|PM)/i;
         const timeMatch = bossbarString.match(timeRegex);
 
         if (timeMatch && timeMatch[0]) {

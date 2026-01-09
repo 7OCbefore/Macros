@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(powershell -Command:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
     ]
   }
 }

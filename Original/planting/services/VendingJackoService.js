@@ -144,7 +144,7 @@ class VendingJackoService {
             return true;
         }
 
-        const jackoEntity = World.getEntities(1.5, "armor_stand")[0];
+        const jackoEntity = World.getEntities(2, "clock")[0];
         if (!jackoEntity) {
             Chat.log("Jacko NPC not found.");
             return false;

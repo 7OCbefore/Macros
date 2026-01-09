@@ -4,7 +4,7 @@ closeKey = "key.keyboard.x"
 // 强制暂停脚本 - 监听按键事件
 JsMacros.on("Key", JavaWrapper.methodToJava((event, context) => {
     if (event.key === closeKey) {
-        Chat.log('§a捡漏机器人下线了');
+        // Chat.log('§a捡漏机器人下线了');
         JavaWrapper.stop();
     }
 }));
