@@ -144,14 +144,20 @@ class VendingJackoService {
             return true;
         }
 
-        const jackoEntity = World.getEntities(2, "clock")[0];
-        if (!jackoEntity) {
-            Chat.log("Jacko NPC not found.");
+        const interactPoint = this._jacko.interactPosPoint || this._jacko.pos2Point;
+        if (!interactPoint) {
+            Chat.log("Jacko interact position missing.");
             return false;
         }
-        Player.getInteractionManager().interactEntity(jackoEntity, false);
+
+        const player = Player.getPlayer();
+        const target = interactPoint.toCenter();
+
+        player.lookAt(target.x, target.y, target.z);
+        Player.getInteractionManager().interact();
         Client.waitTick(this._config.timings.jackoInteractWait);
-        Player.getInteractionManager().interactEntity(jackoEntity, false);
+        player.lookAt(target.x, target.y, target.z);
+        Player.getInteractionManager().interact();
         Client.waitTick(this._config.timings.jackoSecondInteractWait);
         return true;
     }

@@ -36,6 +36,7 @@
   "jackoData": {
     "pos1": [-54, 70, -119],
     "pos2": [-57, 70, -115],
+    "interactPos": [-57, 71, -115],
     "sellTime": {
       "hour": 7,
       "minute": 0

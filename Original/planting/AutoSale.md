@@ -20,6 +20,7 @@
 
 可选字段（未配置则使用默认值）：
 - `jackoData.messages`: 广告语列表。
+- `jackoData.interactPos`: Jacko 交互方块坐标（[x,y,z]），默认沿用 `pos2`。
 - `jackoData.teleportCommand` / `jackoData.returnCommand`：传送与返回指令。
 - `timings` / `thresholds`: 延迟与距离阈值调优。
 

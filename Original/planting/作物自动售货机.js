@@ -136,7 +136,9 @@ class VendingApplication {
         }
 
         jackoData.pos1Point = Point3D.from(jackoData.pos1);
-        jackoData.pos2Point = Point3D.from(jackoData.pos2);
+        jackoData.pos2Point = Point3D.from(jackoData.pos2);
+        const interactPos = Array.isArray(jackoData.interactPos) ? jackoData.interactPos : jackoData.pos2;
+        jackoData.interactPosPoint = Point3D.from(interactPos);
 
         this._config = {
             scriptConfig,
@@ -174,6 +176,11 @@ class VendingApplication {
         if (!config.jackoData || !Array.isArray(config.jackoData.pos1) || !Array.isArray(config.jackoData.pos2)) {
             throw new Error('jackoData.pos1/pos2 must be coordinate arrays');
         }
+
+        if (config.jackoData.interactPos && (!Array.isArray(config.jackoData.interactPos) || config.jackoData.interactPos.length < 3)) {
+            throw new Error('jackoData.interactPos must be [x,y,z]');
+        }
+
 
         if (!config.jackoData.sellTime || !Number.isFinite(config.jackoData.sellTime.hour)) {
             throw new Error('jackoData.sellTime.hour must be a number');
@@ -364,3 +371,4 @@ try {
     Chat.log('§c[Critical Error] ' + error.message);
     Chat.log('§7' + error.stack);
 }
+
