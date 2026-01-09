@@ -1,9 +1,21 @@
-const FS = Java.type('java.nio.file.Files');
-const Paths = Java.type('java.nio.file.Paths');
-const StandardCharsets = Java.type('java.nio.charset.StandardCharsets');
+// 单元测试：测试与方块交互（模拟右键点击）
+Chat.log("=== 测试与方块交互（模拟右键） ===");
 
-const filePath = Paths.get(__dirname, "bossbars.txt");
-const bossbars = World.getBossBars();
+// Jacko 的方块坐标
+const jackoPos = { x: -57, y: 71, z: -115 };
 
-FS.writeString(filePath, String(bossbars), StandardCharsets.UTF_8);
-Chat.log("§a已写入: " + filePath);
+// 获取玩家位置
+const player = Player.getPlayer();
+Chat.log("玩家位置: " + player.getBlockPos().toString());
+
+// 使用 KeyBind 模拟右键点击
+Chat.log("执行右键点击...");
+
+// 右键点击
+KeyBind.fromString("key.keyboard.right").onTick();
+
+Chat.log("右键点击已执行");
+
+// 等待查看结果
+Client.waitTick(20);
+Chat.log("等待完成");
