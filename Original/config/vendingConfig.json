@@ -2,7 +2,36 @@
   "scriptConfig": {
     "closeKey": "key.keyboard.x",
     "defaultSellAmount": 64,
-    "defaultAuctionPrice": 800
+    "defaultAuctionPrice": 800,
+    "safeMode": false
+  },
+  "timings": {
+    "splitSwapWait": 8,
+    "splitClickWait": 3,
+    "splitRightClickWait": 3,
+    "splitAdjustWait": 1,
+    "splitConfirmWait": 8,
+    "auctionSwapWait": 10,
+    "auctionCommandWait": 8,
+    "queueWait": 10,
+    "moveTick": 1,
+    "moveTimeout": 500,
+    "containerWaitTimeout": 100,
+    "containerOpenWait": 4,
+    "basketSwapWait": 6,
+    "basketQuickWait": 14,
+    "jackoInteractWait": 14,
+    "jackoSecondInteractWait": 6,
+    "teleportWait": 134,
+    "postSellWait": 34,
+    "scheduleAfterSellWait": 168,
+    "scheduleTickInterval": 2134,
+    "adMinDelay": 60,
+    "adMaxDelay": 1666
+  },
+  "thresholds": {
+    "moveDistance": 5,
+    "jackoDistance": 1
   },
   "jackoData": {
     "pos1": [-54, 70, -119],
@@ -10,7 +39,14 @@
     "sellTime": {
       "hour": 7,
       "minute": 0
-    }
+    },
+    "teleportCommand": "/balloon yellow-balloon",
+    "returnCommand": "/realm tp 7OCbefore",
+    "messages": [
+      "/ad profit crops in my ah",
+      "/ad cheap 3-star crops in my ah",
+      "/ad anyone need some crops check my ah"
+    ]
   },
   "cropData": {
     "Apple": {
