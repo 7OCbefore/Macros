@@ -13,3 +13,9 @@ try {
 } catch (error) {
     Chat.log(`[Vending][ERROR] Critical error: ${error.message}`);
 }
+
+//TODO
+/**
+- log info 的配色
+- 更智能的作物上架和补货功能
+ */

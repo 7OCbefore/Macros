@@ -3,6 +3,8 @@
  * @description Handles Jacko selling flows and scheduling data
  */
 
+const Point3D = require('../../core/Point3D.js');
+
 class JackoService {
     constructor(config, logger, state, inventoryService, movementService, basketService, queueService, cropDataMap) {
         this._config = config;
@@ -155,10 +157,10 @@ class JackoService {
         const player = Player.getPlayer();
         const interactPos = this._config.jackoData.interactPos || this._config.jackoData.pos2;
 
-        player.lookAt(interactPos[0]+0.5, interactPos[1]+0.5, interactPos[2]+0.5);
+        this._lookAtBlockCenter(player, interactPos);
         Player.getInteractionManager().interact();
         Client.waitTick(this._config.timings.jackoInteractWait);
-        player.lookAt(interactPos[0]+0.5, interactPos[1]+0.5, interactPos[2]+0.5);
+        this._lookAtBlockCenter(player, interactPos);
         Player.getInteractionManager().interact();
         Client.waitTick(this._config.timings.jackoSecondInteractWait);
 
@@ -167,6 +169,16 @@ class JackoService {
             return false;
         }
         return true;
+    }
+
+    _lookAtBlockCenter(player, pos) {
+        const target = Point3D.from(pos);
+        if (!target) {
+            this._logger.warn('Invalid look target position.', 'Jacko');
+            return;
+        }
+        const center = target.toCenter();
+        player.lookAt(center.x, center.y, center.z);
     }
 
     _processJackoInventory() {
