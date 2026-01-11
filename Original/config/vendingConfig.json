@@ -31,11 +31,11 @@
   },
   "thresholds": {
     "moveDistance": 5,
-    "jackoDistance": 1
+    "jackoDistance": 2
   },
   "jackoData": {
-    "pos1": [-54, 70, -119],
-    "pos2": [-57, 70, -115],
+    "pos1": [-54, 69, -119],
+    "pos2": [-57, 71, -115],
     "interactPos": [-57, 71, -115],
     "sellTime": {
       "hour": 7,
@@ -68,5 +68,11 @@
       "chestPos": [204, 56, 388],
       "sellForJackoPrice": 17
     }
+  },
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "useColors": true,
+    "prefix": "Vending"
   }
 }
