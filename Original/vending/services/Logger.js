@@ -52,23 +52,23 @@ class Logger {
         }
 
         const levelLabel = level.toUpperCase();
-        const builder = Chat.createTextBuilder();
-        const prefixColor = 0x55FFFF;
+        const prefixColor = '§3';
         const levelColor = {
-            debug: 0xAAAAAA,
-            info: 0x55FF55,
-            warn: 0xFFFF55,
-            error: 0xFF5555
-        }[level] || 0xAAAAAA;
+            debug: '§7',
+            info: '§b',
+            warn: '§6',
+            error: '§c'
+        }[level] || '§7';
+        const messageColor = {
+            debug: '§7',
+            info: '§f',
+            warn: '§6',
+            error: '§c'
+        }[level] || '§f';
+        const contextLabel = context ? `${prefixColor}[${context}]` : '';
+        const prefixLabel = `${prefixColor}[${this._prefix}]${contextLabel}`;
 
-        builder.append(`[${this._prefix}]`).withColor(prefixColor);
-        if (context) {
-            builder.append(`[${context}]`).withColor(prefixColor);
-        }
-        builder.append(`[${levelLabel}] `).withColor(levelColor);
-        builder.append(message).withColor(0xFFFFFF);
-
-        Chat.log(builder.build());
+        Chat.log(`${prefixLabel}${levelColor}[${levelLabel}] ${messageColor}${message}§r`);
     }
 
     _formatPrefix(level, context) {
