@@ -5,16 +5,16 @@
 
 const ConfigLoader = require('../core/ConfigLoader.js');
 const VendingState = require('./VendingState.js');
-const Logger = require('./services/Logger.js');
-const InventoryService = require('./services/InventoryService.js');
-const MovementService = require('./services/MovementService.js');
-const AuctionService = require('./services/AuctionService.js');
-const BasketService = require('./services/BasketService.js');
-const MessageParser = require('./services/MessageParser.js');
-const QueueService = require('./services/QueueService.js');
-const JackoService = require('./services/JackoService.js');
-const Scheduler = require('./services/Scheduler.js');
-const EventHandler = require('./services/EventHandler.js');
+const Logger = require('../services/Logger.js');
+const InventoryService = require('../services/VendingInventoryService.js');
+const MovementService = require('../services/VendingMovementService.js');
+const AuctionService = require('../services/AuctionService.js');
+const BasketService = require('../services/BasketService.js');
+const MessageParser = require('../services/MessageParser.js');
+const QueueService = require('../services/QueueService.js');
+const JackoService = require('../services/JackoService.js');
+const Scheduler = require('../services/Scheduler.js');
+const EventHandler = require('../services/VendingEventHandler.js');
 
 class VendingApplication {
     constructor() {

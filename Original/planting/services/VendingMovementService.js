@@ -3,7 +3,7 @@
  * @description Movement helpers for vending macro
  */
 
-const Point3D = require('../../../core/Point3D.js');
+const Point3D = require('../../core/Point3D.js');
 
 class MovementService {
     constructor(config, logger) {

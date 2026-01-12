@@ -3,7 +3,7 @@
  * @description Handles Jacko selling flows and scheduling data
  */
 
-const Point3D = require('../../../core/Point3D.js');
+const Point3D = require('../../core/Point3D.js');
 
 class JackoService {
     constructor(config, logger, state, inventoryService, movementService, basketService, queueService, cropDataMap) {
