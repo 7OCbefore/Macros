@@ -63,12 +63,87 @@ class FarmAreaManager {
     }
 }
 
+function normalizeItemName(name) {
+    if (!name) {
+        return "";
+    }
+    const withoutColor = String(name).replace(/§[0-9A-FK-OR]/gi, "");
+    return withoutColor.replace(/[^0-9a-zA-Z\u4e00-\u9fa5]+/g, "").toLowerCase();
+}
+
+function normalizeTargetName(name) {
+    if (!name) {
+        return "";
+    }
+    const raw = String(name);
+    const withoutNamespace = raw.includes(":") ? raw.split(":").pop() : raw;
+    return normalizeItemName(withoutNamespace);
+}
+
+function normalizeTargetNames(names) {
+    const list = Array.isArray(names) ? names : [names];
+    const normalized = [];
+
+    for (const name of list) {
+        const normalizedName = normalizeTargetName(name);
+        if (normalizedName) {
+            normalized.push(normalizedName);
+        }
+    }
+
+    return normalized;
+}
+
+function findItemSlotsByName(inventory, itemNames) {
+    const totalSlots = inventory.getTotalSlots();
+    const matchedSlots = [];
+    const normalizedTargets = normalizeTargetNames(itemNames);
+
+    if (normalizedTargets.length === 0) {
+        return matchedSlots;
+    }
+
+    const targetSet = new Set(normalizedTargets);
+
+    for (let slotIndex = 0; slotIndex < totalSlots; slotIndex++) {
+        const item = inventory.getSlot(slotIndex);
+        if (!item) {
+            continue;
+        }
+        const displayName = item.getName().getString();
+        if (targetSet.has(normalizeItemName(displayName))) {
+            matchedSlots.push(slotIndex);
+        }
+    }
+
+    return matchedSlots;
+}
+
+
+function isItemNameInList(item, nameList) {
+    if (!item) {
+        return false;
+    }
+    const displayName = item.getName().getString();
+    const normalizedItemName = normalizeItemName(displayName);
+
+    for (const targetName of nameList) {
+        if (normalizedItemName === normalizeTargetName(targetName)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // 物品管理器
 class ItemManager {
-    constructor(chestPos, itemId) {
+    constructor(chestPos, itemNames) {
         this.chestPos = chestPos;
-        this.itemId = itemId;
+        this.itemNames = itemNames;
     }
+
+
 
     checkAndRefillItem() {
         const player = Player.getPlayer();
@@ -76,7 +151,7 @@ class ItemManager {
         const mainHandItem = player.getMainHand();
 
         if (mainHandItem.getCount() <= REFILL_THRESHOLD) {
-            const itemSlots = inv.findItem(this.itemId);
+            const itemSlots = findItemSlotsByName(inv, this.itemNames);
             let selectedSlot = -1;
             for (const slot of itemSlots) {
                 const slotItemCount = inv.getSlot(slot).getCount();
@@ -106,7 +181,7 @@ class ItemManager {
         Client.waitTick(5);
 
         const chestInv = Player.openInventory();
-        const chestSlots = chestInv.findItem(this.itemId);
+        const chestSlots = findItemSlotsByName(chestInv, this.itemNames);
 
         if (chestSlots.length > 0) {
             for (const chestSlot of chestSlots) {
@@ -239,10 +314,12 @@ function transferItemsToChest(chestPos, itemsToTransfer) {
 
     let itemSlots = [];
     for (let i = mainStartIndex; i < mainStartIndex + 36; i++) {
-        if (itemsToTransfer.includes(inv.getSlot(i).getItemId())) {
+        const slotItem = inv.getSlot(i);
+        if (slotItem && isItemNameInList(slotItem, itemsToTransfer)) {
             itemSlots.push(i);
         }
     }
+
 
     while (emptySlots > 0 && itemSlots.length > 0) {
         inv.quick(itemSlots.pop());
@@ -256,17 +333,19 @@ function transferItemsToChest(chestPos, itemsToTransfer) {
 }
 
 // checkAndRefillItem (保持不变)
-function checkAndRefillItem(chestPos, mainHandItemId) {
+function checkAndRefillItem(chestPos, mainHandItemNames) {
     // ... (checkAndRefillItem 函数代码保持不变)
     const player = Player.getPlayer();
     const inv = Player.openInventory();
     const mainHandItem = player.getMainHand();
 
     if (mainHandItem.getCount() <= REFILL_THRESHOLD) {
-        Chat.log(`Item count is low. Attempting to refill item with ID: ${mainHandItemId}`); // Debug log
+        const nameListLabel = Array.isArray(mainHandItemNames) ? mainHandItemNames.join(", ") : String(mainHandItemNames);
+        Chat.log(`Item count is low. Attempting to refill item by name: ${nameListLabel}`); // Debug log
+
 
         // Check for the item in the inventory
-        const itemSlots = inv.findItem(mainHandItemId);
+        const itemSlots = findItemSlotsByName(inv, mainHandItemNames);
 
         // Look for slots with sufficient quantity or slots below the threshold
         let lowSlots = [];
@@ -297,7 +376,8 @@ function checkAndRefillItem(chestPos, mainHandItemId) {
             Client.waitTick(REFILL_WAIT_TICKS); // Wait for the swap to complete
         } else {
             Chat.log(Chat.createTextBuilder().append("Warning:").withColor(255, 0, 0)
-                .append(`${mainHandItemId} is exhausted in inventory, moving to chest for replenishment.`).withColor(255, 128, 128).build());
+                .append(`${nameListLabel} is exhausted in inventory, moving to chest for replenishment.`).withColor(255, 128, 128).build());
+
 
             // Walk to the chest and restock the item
             moveToBlock(chestPos[0] + 0.5, chestPos[1]+ 0.5, chestPos[2]+ 0.5);
@@ -311,7 +391,7 @@ function checkAndRefillItem(chestPos, mainHandItemId) {
 
             // Open inventory and look for the item in the chest
             const chestInv = Player.openInventory();
-            const chestSlots = chestInv.findItem(mainHandItemId);
+            const chestSlots = findItemSlotsByName(chestInv, mainHandItemNames);
 
             if (chestSlots.length > 0) {
                 let transferred = 0;
@@ -340,7 +420,7 @@ function checkAndRefillItem(chestPos, mainHandItemId) {
 
                     // Ensure item is equipped in the main hand after restocking
                     const postChestInv = Player.openInventory();
-                    const postChestItemSlots = postChestInv.findItem(mainHandItemId);
+                    const postChestItemSlots = findItemSlotsByName(postChestInv, mainHandItemNames);
                     let postChestSelectedSlot = -1;
                     for (const slot of postChestItemSlots) {
                         const postChestSlotItemCount = postChestInv.getSlot(slot).getCount();
@@ -358,11 +438,11 @@ function checkAndRefillItem(chestPos, mainHandItemId) {
                     }
                 } else {
                     Chat.log(Chat.createTextBuilder().append("Error:").withColor(255, 0, 0)
-                        .append(`No more ${mainHandItemId} in the chest.`).withColor(255, 128, 128).build());
+                        .append(`No more ${mainHandItemNames} in the chest.`).withColor(255, 128, 128).build());
                 }
             } else {
                 Chat.log(Chat.createTextBuilder().append("Error:").withColor(255, 0, 0)
-                    .append(`No ${mainHandItemId} found in the chest.`).withColor(255, 128, 128).build());
+                    .append(`No ${mainHandItemNames} found in the chest.`).withColor(255, 128, 128).build());
             }
 
             chestInv.closeAndDrop();
@@ -409,7 +489,7 @@ function moveToBlock(x, y, z) {
 }
 
 // snakeWalk (保持不变，但需要在结束时重置 State.isActionRunning 和 scriptState)
-function snakeWalk(startPos, endPos, chestPos, itemId, actionType) { // actionType 参数用于区分动作类型
+function snakeWalk(startPos, endPos, chestPos, itemNames, actionType) { // actionType 参数用于区分动作类型
     const startX = startPos[0];
     const endX = endPos[0];
     const startZ = startPos[2];
@@ -440,7 +520,7 @@ function snakeWalk(startPos, endPos, chestPos, itemId, actionType) { // actionTy
 
                 moveToBlock(localX + 0.5, startPos[1] + 0.5, z + 0.5);
 
-                checkAndRefillItem(chestPos, itemId); // Pass item ID to refill function
+                checkAndRefillItem(chestPos, itemNames); // Pass item names to refill function
 
                 Player.getInteractionManager().interactBlock(localX, startPos[1], z, 1, false); // 方块交互，方向参数 1 代表 East，可以根据实际情况调整
                 Client.waitTick(FERTILIZE_WAIT_TICKS);
@@ -496,8 +576,8 @@ const mainEventListener = JsMacros.on("Key", JavaWrapper.methodToJava((event, ct
             const end = [276, 56, 329]; // 保持硬编码的 end 坐标
             const chest1 = [220, 55, 397]; // 培养土箱子
             const chest1_1 = [220, 58, 398]; // 清空背包的 培养土箱子
-            const itemsToTransfer = ["minecraft:paper"]; // 转移物品列表
-            snakeWalk(start, end, chest1, "minecraft:paper", "Soil placement"); // 传递 actionType
+            const itemsToTransfer = ["Bag o' Soil"]; // 转移物品列表
+            snakeWalk(start, end, chest1, itemsToTransfer, "Soil placement"); // 传递 actionType
             transferItemsToChest(chest1_1, itemsToTransfer);
             eat();
         } else if (event.key == "key.keyboard.2") {
@@ -507,8 +587,8 @@ const mainEventListener = JsMacros.on("Key", JavaWrapper.methodToJava((event, ct
             const end = [276, 56, 329]; // 保持硬编码的 end 坐标
             const chest2 = [221, 55, 397]; // 肥料箱子
             const chest2_1 = [222, 58, 399]; // 清空背包的 肥料箱子
-            const itemsToTransfer = ["minecraft:paper"]; // 转移物品列表
-            snakeWalk(start, end, chest2, "minecraft:paper", "Fertilizing"); // 传递 actionType
+            const itemsToTransfer = ["Produce Multiplier Fertilizer"]; // 转移物品列表
+            snakeWalk(start, end, chest2, itemsToTransfer, "Fertilizing"); // 传递 actionType
             transferItemsToChest(chest2_1, itemsToTransfer);
             eat();
         } else if (event.key == "key.keyboard.3") {
@@ -517,9 +597,9 @@ const mainEventListener = JsMacros.on("Key", JavaWrapper.methodToJava((event, ct
             const start = posCon[1];
             const end = [276, 56, 329]; // 保持硬编码的 end 坐标
             const chest3 = posCon[0];      // 种子箱子 (使用之前获取的种子箱子位置)
-            const chest3_1 = [chest3[0], chest3[1]+2, chest3[2]+1]; // 清空背包的 种子箱子
-            const itemsToTransfer = ["minecraft:paper"]; // 转移物品列表
-            snakeWalk(start, end, chest3, "minecraft:paper", "Planting seeds"); // 传递 actionType
+            const chest3_1 = [chest3[0], chest3[1]+4, chest3[2]+2]; // 清空背包的 种子箱子
+            const itemsToTransfer = ["Apple Seed", "Mango Pit", "Banana Seed"]; // 转移物品列表
+            snakeWalk(start, end, chest3, itemsToTransfer, "Planting seeds"); // 传递 actionType
             transferItemsToChest(chest3_1, itemsToTransfer);
             eat();
         }
