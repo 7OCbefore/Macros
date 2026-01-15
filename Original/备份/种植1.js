@@ -1,5 +1,3 @@
-
-
 /*
 2024-08-17 修改为使用单一事件监听器和状态机，避免嵌套监听，提升代码结构和可维护性。
 */
@@ -219,12 +217,58 @@ const Config = {
     ATTACK_WAIT_TICKS: 1,
     MOVE_WAIT_TICKS: 1,
     VERBOSE_LOGS: false,
+    LOOK_SMOOTH_SPEED: 0.1, // 视角平滑速度，0.01-0.2，越小越平滑
 };
 
 function logVerbose(message) {
     if (Config.VERBOSE_LOGS) {
         Chat.log(message);
     }
+}
+
+// --- 平滑视角移动函数 ---
+// 角度归一化到 [-180, 180]
+function normalizeAngle(angle) {
+    while (angle > 180) angle -= 360;
+    while (angle < -180) angle += 360;
+    return angle;
+}
+
+// 角度插值 (lerp)
+function lerpAngle(current, target, factor) {
+    const diff = normalizeAngle(target - current);
+    return current + diff * factor;
+}
+
+// 计算从当前位置看向目标的 yaw/pitch
+function getTargetYawPitch(fromX, fromY, fromZ, toX, toY, toZ) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const dz = toZ - fromZ;
+
+    const yaw = Math.atan2(-dx, dz) * (180 / Math.PI);
+    const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+    const pitch = Math.atan2(-dy, horizontalDist) * (180 / Math.PI);
+
+    return { yaw, pitch };
+}
+
+// 平滑 lookAt
+function smoothLookAt(targetX, targetY, targetZ, speed) {
+    const player = Player.getPlayer();
+    const currentYaw = player.getYaw();
+    const currentPitch = player.getPitch();
+
+    const target = getTargetYawPitch(
+        player.getX(), player.getY(), player.getZ(),
+        targetX, targetY, targetZ
+    );
+
+    const actualSpeed = speed !== undefined ? speed : Config.LOOK_SMOOTH_SPEED;
+    const newYaw = lerpAngle(currentYaw, target.yaw, actualSpeed);
+    const newPitch = lerpAngle(currentPitch, target.pitch, actualSpeed);
+
+    player.lookAt(newYaw, newPitch);
 }
 
 
@@ -508,7 +552,7 @@ function moveToBlock(x, y, z) {
                 waitIfPaused();
             }
 
-            player.lookAt(targetX, targetY, targetZ);
+            smoothLookAt(targetX, targetY, targetZ);
             KeyBind.keyBind("key.forward", true);
             KeyBind.keyBind("key.sprint", true);
 
