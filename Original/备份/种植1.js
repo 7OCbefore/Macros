@@ -598,7 +598,7 @@ const mainEventListener = JsMacros.on("Key", JavaWrapper.methodToJava((event, ct
             const end = [276, 56, 329]; // 保持硬编码的 end 坐标
             const chest3 = posCon[0];      // 种子箱子 (使用之前获取的种子箱子位置)
             const chest3_1 = [chest3[0], chest3[1]+4, chest3[2]+2]; // 清空背包的 种子箱子
-            const itemsToTransfer = ["Apple Seed", "Mango Pit", "Banana Seed"]; // 转移物品列表
+            const itemsToTransfer = ["Apple Seeds", "Mango Pit", "Banana Seeds"]; // 转移物品列表
             snakeWalk(start, end, chest3, itemsToTransfer, "Planting seeds"); // 传递 actionType
             transferItemsToChest(chest3_1, itemsToTransfer);
             eat();
