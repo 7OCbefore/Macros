@@ -175,10 +175,18 @@ class ItemManager {
         moveToBlock(this.chestPos.x + 0.5, this.chestPos.y + 0.5, this.chestPos.z + 0.5);
         Player.getInteractionManager().interactBlock(this.chestPos.x, this.chestPos.y, this.chestPos.z, player.getFacingDirection().getName(), false);
 
-        while (!Hud.isContainer()) {
+        let timeout = Config.CONTAINER_WAIT_TIMEOUT;
+        while (!Hud.isContainer() && timeout > 0) {
             Client.waitTick();
+            timeout--;
+        }
+        if (timeout === 0) {
+            Chat.log(Chat.createTextBuilder().append("Error:").withColor(255, 0, 0)
+                .append("Timeout while waiting for container to open.").withColor(255, 128, 128).build());
+            return;
         }
         Client.waitTick(5);
+
 
         const chestInv = Player.openInventory();
         const chestSlots = findItemSlotsByName(chestInv, this.itemNames);
@@ -210,7 +218,15 @@ const Config = {
     INV_CLOSE_WAIT_TICKS: 6,
     ATTACK_WAIT_TICKS: 1,
     MOVE_WAIT_TICKS: 1,
+    VERBOSE_LOGS: false,
 };
+
+function logVerbose(message) {
+    if (Config.VERBOSE_LOGS) {
+        Chat.log(message);
+    }
+}
+
 
 // --- State --- (保持不变，但新增 scriptState)
 let State = {
@@ -258,7 +274,7 @@ function eat() {
         return; // 饱食度足够，不需要吃
     }
 
-    Chat.log(`foodLevel is ${foodLevel} now, eating~`);
+    logVerbose(`foodLevel is ${foodLevel} now, eating~`);
 
     while (foodLevel < 20) {
         player.lookAt("up");
@@ -269,12 +285,13 @@ function eat() {
         Client.waitTick(Config.POST_EAT_WAIT_TICKS);
         foodLevel = player.getFoodLevel();
 
-        Chat.log(`foodLevel is now ${foodLevel}`);
+        logVerbose(`foodLevel is now ${foodLevel}`);
         if (foodLevel >= 20) {
-            Chat.log("Food level reached 20 or more, stopped eating.");
+            logVerbose("Food level reached 20 or more, stopped eating.");
             break;
         }
     }
+
 }
 
 
@@ -341,7 +358,8 @@ function checkAndRefillItem(chestPos, mainHandItemNames) {
 
     if (mainHandItem.getCount() <= REFILL_THRESHOLD) {
         const nameListLabel = Array.isArray(mainHandItemNames) ? mainHandItemNames.join(", ") : String(mainHandItemNames);
-        Chat.log(`Item count is low. Attempting to refill item by name: ${nameListLabel}`); // Debug log
+        logVerbose(`Item count is low. Attempting to refill item by name: ${nameListLabel}`);
+
 
 
         // Check for the item in the inventory
@@ -371,7 +389,8 @@ function checkAndRefillItem(chestPos, mainHandItemNames) {
         }
 
         if (selectedSlot !== -1) {
-            Chat.log(`Found item slot with sufficient quantity: ${selectedSlot}`); // Debug log
+            logVerbose(`Found item slot with sufficient quantity: ${selectedSlot}`);
+
             inv.swapHotbar(selectedSlot, inv.getSelectedHotbarSlotIndex());
             Client.waitTick(REFILL_WAIT_TICKS); // Wait for the swap to complete
         } else {
@@ -384,10 +403,18 @@ function checkAndRefillItem(chestPos, mainHandItemNames) {
             Player.getInteractionManager().interactBlock(chestPos[0], chestPos[1], chestPos[2], player.getFacingDirection().getName(), false);
 
             // Wait for the chest interface to open
-            while (!Hud.isContainer()) {
+            let timeout = Config.CONTAINER_WAIT_TIMEOUT;
+            while (!Hud.isContainer() && timeout > 0) {
                 Client.waitTick();
+                timeout--;
+            }
+            if (timeout === 0) {
+                Chat.log(Chat.createTextBuilder().append("Error:").withColor(255, 0, 0)
+                    .append("Timeout while waiting for container to open.").withColor(255, 128, 128).build());
+                return;
             }
             Client.waitTick(5);
+
 
             // Open inventory and look for the item in the chest
             const chestInv = Player.openInventory();
@@ -416,7 +443,8 @@ function checkAndRefillItem(chestPos, mainHandItemNames) {
                 }
 
                 if (transferred > 0) {
-                    Chat.log(`Transferred ${transferred} items from the chest to the inventory.`);
+                    logVerbose(`Transferred ${transferred} items from the chest to the inventory.`);
+
 
                     // Ensure item is equipped in the main hand after restocking
                     const postChestInv = Player.openInventory();
@@ -453,40 +481,75 @@ function checkAndRefillItem(chestPos, mainHandItemNames) {
 
 // moveToBlock (保持不变)
 function moveToBlock(x, y, z) {
-    // ... (moveToBlock 函数代码保持不变)
     const player = Player.getPlayer();
-    var targetX = x;
-    var targetY = y;
-    var targetZ = z;
+    const targetX = x;
+    const targetY = y;
+    const targetZ = z;
 
-    var currentX = player.getX();
-    var currentY = player.getY();
-    var currentZ = player.getZ();
+    let currentX = player.getX();
+    let currentY = player.getY();
+    let currentZ = player.getZ();
 
-    var dx = targetX - currentX;
-    var dz = targetZ - currentZ;
+    let dx = targetX - currentX;
+    let dz = targetZ - currentZ;
+    let distance = Math.sqrt(dx * dx + dz * dz);
 
-    player.lookAt(targetX, targetY, targetZ);
-
-    dx = targetX - currentX;
-    dz = targetZ - currentZ;
-    var distance = Math.sqrt(dx * dx + dz * dz);
-
-    while (distance > 3) {
-        player.lookAt(targetX, targetY, targetZ);
-
-        currentX = player.getX();
-        currentY = player.getY();
-        currentZ = player.getZ();
-        dx = targetX - currentX;
-        dz = targetZ - currentZ;
-        distance = Math.sqrt(dx * dx + dz * dz);
-        KeyBind.keyBind("key.forward", true);
-        KeyBind.keyBind("key.sprint", true); // 冲刺
-        Client.waitTick(1);
+    if (distance <= 3) {
+        return true;
     }
-    KeyBind.keyBind("key.forward", false);
+
+    let timeout = 500;
+    let lastDistance = distance;
+    let stuckCount = 0;
+
+    try {
+        while (distance > 3 && timeout > 0) {
+            if (isPaused) {
+                waitIfPaused();
+            }
+
+            player.lookAt(targetX, targetY, targetZ);
+            KeyBind.keyBind("key.forward", true);
+            KeyBind.keyBind("key.sprint", true);
+
+            Client.waitTick(Config.MOVE_WAIT_TICKS);
+
+            currentX = player.getX();
+            currentY = player.getY();
+            currentZ = player.getZ();
+            dx = targetX - currentX;
+            dz = targetZ - currentZ;
+            distance = Math.sqrt(dx * dx + dz * dz);
+
+            if (Math.abs(distance - lastDistance) < 0.01) {
+                stuckCount++;
+                if (stuckCount > 20) {
+                    Chat.log(`§c[Movement] Stuck at ${targetX},${targetY},${targetZ}. Attempting jump...`);
+                    player.setJumping(true);
+                    Client.waitTick(5);
+                    player.setJumping(false);
+                    stuckCount = 0;
+                }
+            } else {
+                stuckCount = 0;
+            }
+
+            lastDistance = distance;
+            timeout--;
+        }
+
+        if (timeout === 0) {
+            Chat.log(`§c[Movement] Timeout moving to ${targetX},${targetY},${targetZ}`);
+            return false;
+        }
+
+        return true;
+    } finally {
+        KeyBind.keyBind("key.forward", false);
+        KeyBind.keyBind("key.sprint", false);
+    }
 }
+
 
 // snakeWalk (保持不变，但需要在结束时重置 State.isActionRunning 和 scriptState)
 function snakeWalk(startPos, endPos, chestPos, itemNames, actionType) { // actionType 参数用于区分动作类型
@@ -495,44 +558,74 @@ function snakeWalk(startPos, endPos, chestPos, itemNames, actionType) { // actio
     const startZ = startPos[2];
     const endZ = endPos[2];
 
-    // 确定x方向的遍历顺序
-    const xStep = Math.sign(endX - startX);
-    const zStepInitial = Math.sign(endZ - startZ);
+    const xStep = Math.sign(endX - startX) || 1;
+    const zStepInitial = Math.sign(endZ - startZ) || 1;
 
     let currentX = startX;
     let group = 0;
-    let stepSize = 5;
+    const stepSize = Config.STEP_SIZE;
+
+    const totalBlocks = (Math.abs(endX - startX) + 1) * (Math.abs(endZ - startZ) + 1);
+    let processedBlocks = 0;
+
+    Chat.log(`§e[Info] Processing ${totalBlocks} blocks...`);
 
     while ((xStep > 0 && currentX <= endX) || (xStep < 0 && currentX >= endX)) {
-        const middleX = currentX + xStep * Math.floor(5 / 2); // Fixed group size of 5
-
-        // 确定z方向的遍历顺序
         const zStart = (group % 2 === 0) ? startZ : endZ;
         const zEnd = (zStart === startZ) ? endZ : startZ;
         const zStep = (zStart === startZ) ? zStepInitial : -zStepInitial;
 
+        const stripEndX = currentX + (stepSize - 1) * xStep;
+        const clampedStripEndX = xStep > 0 ? Math.min(stripEndX, endX) : Math.max(stripEndX, endX);
+
+        let rowIndex = 0;
+
         for (let z = zStart; (zStep > 0 && z <= zEnd) || (zStep < 0 && z >= zEnd); z += zStep) {
-            for (let localX = currentX;
-                (xStep > 0 && localX < currentX + 5 * xStep && localX <= endX) ||
-                (xStep < 0 && localX > currentX + 5 * xStep && localX >= endX);
-                localX += xStep) {
-                waitIfPaused(); //暂停
-
-                moveToBlock(localX + 0.5, startPos[1] + 0.5, z + 0.5);
-
-                checkAndRefillItem(chestPos, itemNames); // Pass item names to refill function
-
-                Player.getInteractionManager().interactBlock(localX, startPos[1], z, 1, false); // 方块交互，方向参数 1 代表 East，可以根据实际情况调整
-                Client.waitTick(FERTILIZE_WAIT_TICKS);
+            if (!State.isActionRunning) {
+                Chat.log('§c[Stop] Execution stopped by user');
+                break;
             }
+
+            const isRowForward = (rowIndex % 2 === 0);
+            let localX = isRowForward ? currentX : clampedStripEndX;
+            const localXEnd = isRowForward ? clampedStripEndX : currentX;
+            const localXStep = isRowForward ? xStep : -xStep;
+
+            for (; (localXStep > 0 && localX <= localXEnd) || (localXStep < 0 && localX >= localXEnd); localX += localXStep) {
+                waitIfPaused();
+
+                if (!moveToBlock(localX + 0.5, startPos[1] + 0.5, z + 0.5)) {
+                    Chat.log(`§c[Warning] Failed to reach ${localX},${startPos[1]},${z}`);
+                    continue;
+                }
+
+                checkAndRefillItem(chestPos, itemNames);
+
+                Player.getInteractionManager().interactBlock(localX, startPos[1], z, 1, false);
+                Client.waitTick(FERTILIZE_WAIT_TICKS);
+
+                processedBlocks++;
+                if (processedBlocks % 300 === 0) {
+                    Chat.log(`§b[Progress] ${processedBlocks}/${totalBlocks} blocks processed`);
+                }
+            }
+
+            rowIndex++;
         }
+
+        if (!State.isActionRunning) {
+            break;
+        }
+
         currentX += stepSize * xStep;
         group++;
     }
+
     State.isActionRunning = false;
-    scriptState = "MODE_SELECT"; // 动作结束后，设置回模式选择状态
-    Chat.log(`§a${actionType} completed. Choose again.`); // 提示用户可以选择新的模式, actionType 显示动作类型
+    scriptState = "MODE_SELECT";
+    Chat.log(`§a${actionType} completed. Choose again.`);
 }
+
 
 
 // 物品数量预设值 (保持不变)
