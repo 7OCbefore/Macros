@@ -1,5 +1,6 @@
 /*
 2024-08-17 修改为使用单一事件监听器和状态机，避免嵌套监听，提升代码结构和可维护性。
+2025-01-15 Google Engineering Port: Integrated Kotlin "Grim" GCD-Bypass Algorithm for smooth and safe rotation.
 */
 
 // --- Data Structures ---
@@ -217,7 +218,7 @@ const Config = {
     ATTACK_WAIT_TICKS: 1,
     MOVE_WAIT_TICKS: 1,
     VERBOSE_LOGS: false,
-    LOOK_SMOOTH_SPEED: 0.1, // 视角平滑速度，0.01-0.2，越小越平滑
+    LOOK_SMOOTH_SPEED: 0.2, // 视角平滑速度，0.2-0.4，越小越平滑
 };
 
 function logVerbose(message) {
@@ -226,7 +227,35 @@ function logVerbose(message) {
     }
 }
 
-// --- 平滑视角移动函数 ---
+// --- 平滑视角移动函数 (GrimAC Bypass / GCD Edition) ---
+// Ported from Kotlin implementation to JS.
+// 核心逻辑：强制视角变化符合 Minecraft 鼠标灵敏度步长(GCD)，模拟真实鼠标物理输入。
+
+/**
+ * 获取基于当前鼠标灵敏度的最小角度单位 (GCD)
+ * 对应 Kotlin 中的: val f = (mouseSensitivity * 0.6f + 0.2f); f * f * f * 8f * 0.15f
+ */
+function getGCD() {
+    const options = Client.getGameOptions();
+    let sensitivity = 0.5; // Default safety fallback
+    
+    // Robust access to sensitivity, handling potential API differences in JS Macros
+    try {
+        const sensObj = options.getMouseSensitivity ? options.getMouseSensitivity() : options.mouseSensitivity;
+        if (typeof sensObj === 'number') {
+            sensitivity = sensObj;
+        } else if (sensObj && typeof sensObj.getValue === 'function') {
+            sensitivity = sensObj.getValue();
+        }
+    } catch (e) {
+        // Fallback if API fails
+        sensitivity = 0.5;
+    }
+
+    const f = sensitivity * 0.6 + 0.2;
+    return f * f * f * 8.0 * 0.15;
+}
+
 // 角度归一化到 [-180, 180]
 function normalizeAngle(angle) {
     while (angle > 180) angle -= 360;
@@ -234,42 +263,115 @@ function normalizeAngle(angle) {
     return angle;
 }
 
-// 角度插值 (lerp)
-function lerpAngle(current, target, factor) {
-    const diff = normalizeAngle(target - current);
-    return current + diff * factor;
+// 核心 Grim 算法：将 "当前角度" 到 "目标角度" 的路径，
+// 强制量化为 "鼠标移动了 N 个像素点" 后的结果。
+// 这确保了无论我们如何插值，发送给服务器的最终角度都是数学上合法的。
+function grim(current, target) {
+    const gcd = getGCD();
+    const delta = normalizeAngle(target - current);
+    
+    // 计算需要的“鼠标点数” (Int)，并吸附到最近的整数点
+    const mousePoints = Math.round(delta / gcd);
+    
+    // 转回角度并应用
+    return current + (mousePoints * gcd);
 }
 
-// 计算从当前位置看向目标的 yaw/pitch
-function getTargetYawPitch(fromX, fromY, fromZ, toX, toY, toZ) {
-    const dx = toX - fromX;
-    const dy = toY - fromY;
-    const dz = toZ - fromZ;
-
-    const yaw = Math.atan2(-dx, dz) * (180 / Math.PI);
-    const horizontalDist = Math.sqrt(dx * dx + dz * dz);
-    const pitch = Math.atan2(-dy, horizontalDist) * (180 / Math.PI);
-
-    return { yaw, pitch };
-}
-
-// 平滑 lookAt
+// 改进后的 smoothLookAt
+// 它不再使用简单的 lerpAngle，而是先计算理想的 lerp 位置，
+// 然后使用 grim() 函数将该位置吸附到合法的 GCD 网格上。
+// 返回本帧应使用的 yaw/pitch（不直接修改视角）。
 function smoothLookAt(targetX, targetY, targetZ, speed) {
     const player = Player.getPlayer();
     const currentYaw = player.getYaw();
     const currentPitch = player.getPitch();
 
-    const target = getTargetYawPitch(
-        player.getX(), player.getY(), player.getZ(),
-        targetX, targetY, targetZ
-    );
+    // 1. 计算原始目标角度
+    // [Fix] 引入眼高修正。
+    // 之前只用了 player.getY() (脚底坐标)，导致看同高度方块时视角是水平的。
+    // 现在加上 getEyeHeight() (通常为1.62)，确保计算的是从"眼睛"看向"目标"的角度，从而产生正确的俯视感。
+    const eyeHeight = player.getEyeHeight ? player.getEyeHeight() : 1.62; 
+    const playerEyeY = player.getY() + eyeHeight;
 
+    const dx = targetX - player.getX();
+    const dy = targetY - playerEyeY; // 使用眼睛高度计算垂直差值
+    const dz = targetZ - player.getZ();
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    const rawTargetYaw = Math.atan2(-dx, dz) * (180 / Math.PI);
+    const rawTargetPitch = Math.atan2(-dy, dist) * (180 / Math.PI);
+
+    // 2. 计算这一帧的“理想”中间值 (Lerp)
+    // 这里的逻辑保持不变，用于产生“慢速移动”的效果
     const actualSpeed = speed !== undefined ? speed : Config.LOOK_SMOOTH_SPEED;
-    const newYaw = lerpAngle(currentYaw, target.yaw, actualSpeed);
-    const newPitch = lerpAngle(currentPitch, target.pitch, actualSpeed);
+    
+    // 我们想在这一帧移动多少度？
+    const idealYawDelta = normalizeAngle(rawTargetYaw - currentYaw) * actualSpeed;
+    const idealPitchDelta = normalizeAngle(rawTargetPitch - currentPitch) * actualSpeed;
+    
+    // 理想的下一帧角度
+    const idealNextYaw = currentYaw + idealYawDelta;
+    const idealNextPitch = currentPitch + idealPitchDelta;
 
-    player.lookAt(newYaw, newPitch);
+    // 3. 应用 Grim 约束 (GCD Snap)
+    // 即使我们只是稍微移动一点点，这一点点也必须对应整数个鼠标像素点
+    const finalYaw = grim(currentYaw, idealNextYaw);
+    const finalPitch = grim(currentPitch, idealNextPitch);
+
+    return { yaw: finalYaw, pitch: finalPitch };
 }
+
+function buildMovementFrame(yaw, pitch, options = {}) {
+    return {
+        forward: options.forward !== undefined ? options.forward : 1.0,
+        sideways: options.sideways !== undefined ? options.sideways : 0.0,
+        yaw,
+        pitch,
+        jump: options.jump === true,
+        sneak: options.sneak === true,
+        sprint: options.sprint !== undefined ? options.sprint : true,
+    };
+}
+
+class InputQueue {
+    constructor() {
+        this.queue = [];
+    }
+
+    enqueue(frame) {
+        this.queue.push(frame);
+    }
+
+    enqueueMany(frames) {
+        for (const frame of frames) {
+            this.queue.push(frame);
+        }
+    }
+
+    processNext() {
+        if (this.queue.length === 0) {
+            return false;
+        }
+        const frame = this.queue.shift();
+        const input = Player.createPlayerInput(
+            frame.forward,
+            frame.sideways,
+            frame.yaw,
+            frame.pitch,
+            frame.jump,
+            frame.sneak,
+            frame.sprint
+        );
+        Player.addInput(input);
+        return true;
+    }
+
+    clear() {
+        this.queue = [];
+        Player.clearInputs();
+    }
+}
+
 
 
 // --- State --- (保持不变，但新增 scriptState)
@@ -523,12 +625,14 @@ function checkAndRefillItem(chestPos, mainHandItemNames) {
     }
 }
 
-// moveToBlock (保持不变)
+// moveToBlock (输入队列驱动)
 function moveToBlock(x, y, z) {
     const player = Player.getPlayer();
     const targetX = x;
     const targetY = y;
     const targetZ = z;
+
+    const inputQueue = new InputQueue();
 
     let currentX = player.getX();
     let currentY = player.getY();
@@ -552,11 +656,20 @@ function moveToBlock(x, y, z) {
                 waitIfPaused();
             }
 
-            smoothLookAt(targetX, targetY, targetZ);
-            KeyBind.keyBind("key.forward", true);
-            KeyBind.keyBind("key.sprint", true);
+            const rotation = smoothLookAt(targetX, targetY, targetZ);
+            const shouldJump = stuckCount > 20;
 
+            inputQueue.enqueue(buildMovementFrame(rotation.yaw, rotation.pitch, {
+                jump: shouldJump,
+            }));
+
+            inputQueue.processNext();
             Client.waitTick(Config.MOVE_WAIT_TICKS);
+
+            if (shouldJump) {
+                Chat.log(`§c[Movement] Stuck at ${targetX},${targetY},${targetZ}. Attempting jump...`);
+                stuckCount = 0;
+            }
 
             currentX = player.getX();
             currentY = player.getY();
@@ -567,13 +680,6 @@ function moveToBlock(x, y, z) {
 
             if (Math.abs(distance - lastDistance) < 0.01) {
                 stuckCount++;
-                if (stuckCount > 20) {
-                    Chat.log(`§c[Movement] Stuck at ${targetX},${targetY},${targetZ}. Attempting jump...`);
-                    player.setJumping(true);
-                    Client.waitTick(5);
-                    player.setJumping(false);
-                    stuckCount = 0;
-                }
             } else {
                 stuckCount = 0;
             }
@@ -589,10 +695,10 @@ function moveToBlock(x, y, z) {
 
         return true;
     } finally {
-        KeyBind.keyBind("key.forward", false);
-        KeyBind.keyBind("key.sprint", false);
+        inputQueue.clear();
     }
 }
+
 
 
 // snakeWalk (保持不变，但需要在结束时重置 State.isActionRunning 和 scriptState)
@@ -746,3 +852,5 @@ const mainEventListener = JsMacros.on("Key", JavaWrapper.methodToJava((event, ct
         }
     }
 }));
+
+//TODO 1. jump的问题  2. 继续测试平滑视角 3.

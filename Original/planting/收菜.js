@@ -23,8 +23,70 @@ const Config = {
     CHEST_WAIT_TICKS: 34,
     INV_CLOSE_WAIT_TICKS: 6,
     ATTACK_WAIT_TICKS: 1,
-    MOVE_WAIT_TICKS: 1,
+    MOVE_WAIT_TICKS: 2,
+    LOOK_SMOOTH_SPEED: 0.2,
 };
+
+// 获取基于当前鼠标灵敏度的最小角度单位 (GCD)
+function getGCD() {
+    const options = Client.getGameOptions();
+    let sensitivity = 0.5;
+    try {
+        const sensObj = options.getMouseSensitivity ? options.getMouseSensitivity() : options.mouseSensitivity;
+        if (typeof sensObj === 'number') {
+            sensitivity = sensObj;
+        } else if (sensObj && typeof sensObj.getValue === 'function') {
+            sensitivity = sensObj.getValue();
+        }
+    } catch (e) {
+        sensitivity = 0.5;
+    }
+    const f = sensitivity * 0.6 + 0.2;
+    return f * f * f * 8.0 * 0.15;
+}
+
+// 角度归一化到 [-180, 180]
+function normalizeAngle(angle) {
+    while (angle > 180) angle -= 360;
+    while (angle < -180) angle += 360;
+    return angle;
+}
+
+// Grim 算法：将角度量化为合法 GCD 网格值
+function grim(current, target) {
+    const gcd = getGCD();
+    const delta = normalizeAngle(target - current);
+    const mousePoints = Math.round(delta / gcd);
+    return current + (mousePoints * gcd);
+}
+
+// 平滑看向目标位置
+function smoothLookAt(targetX, targetY, targetZ, speed) {
+    const player = Player.getPlayer();
+    const currentYaw = player.getYaw();
+    const currentPitch = player.getPitch();
+
+    const eyeHeight = player.getEyeHeight ? player.getEyeHeight() : 1.62;
+    const playerEyeY = player.getY() + eyeHeight;
+
+    const dx = targetX - player.getX();
+    const dy = targetY - playerEyeY;
+    const dz = targetZ - player.getZ();
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    const rawTargetYaw = Math.atan2(-dx, dz) * (180 / Math.PI);
+    const rawTargetPitch = Math.atan2(-dy, dist) * (180 / Math.PI);
+
+    const actualSpeed = speed !== undefined ? speed : Config.LOOK_SMOOTH_SPEED;
+
+    const idealYawDelta = normalizeAngle(rawTargetYaw - currentYaw) * actualSpeed;
+    const idealPitchDelta = normalizeAngle(rawTargetPitch - currentPitch) * actualSpeed;
+
+    const finalYaw = grim(currentYaw, currentYaw + idealYawDelta);
+    const finalPitch = grim(currentPitch, currentPitch + idealPitchDelta);
+
+    player.lookAt(finalYaw, finalPitch);
+}
 
 // --- State ---
 let State = {
@@ -100,11 +162,11 @@ function moveToBlock(targetPoint) {
     const player = Player.getPlayer();
     var dx = targetPoint.x - player.getX();
     var dz = targetPoint.z - player.getZ();
-    player.lookAt(targetPoint.x, targetPoint.y, targetPoint.z);
+    smoothLookAt(targetPoint.x, targetPoint.y, targetPoint.z);
     var distance = Math.sqrt(dx * dx + dz * dz);
 
     while (distance > 3) {
-        player.lookAt(targetPoint.x, targetPoint.y, targetPoint.z);
+        smoothLookAt(targetPoint.x, targetPoint.y, targetPoint.z);
         dx = targetPoint.x - player.getX();
         dz = targetPoint.z - player.getZ();
         distance = Math.sqrt(dx * dx + dz * dz);
@@ -138,7 +200,7 @@ function transferItemsToChest(chestPoses, itemsToTransfer) {
 
         // 防止attack时间过长打碎方块
         // 最好聚焦在minecraft窗口，甚至别打开聊天框，esc 等GUI
-        player.lookAt(chestPos.x + 0.5, chestPos.y + 0.5, chestPos.z + 0.5);
+        smoothLookAt(chestPos.x + 0.5, chestPos.y + 0.5, chestPos.z + 0.5);
         moveToBlock(Point3D(chestPos.x + 0.5, chestPos.y + 0.5, chestPos.z + 0.5));
         Player.getInteractionManager().interactBlock(chestPos.x, chestPos.y, chestPos.z, player.getFacingDirection().getName(), false);
 
