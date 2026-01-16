@@ -62,15 +62,20 @@ class FarmIterator {
             const zEnd = isForwardPass ? this._endPos.z : this._startPos.z;
             const zStep = isForwardPass ? this._zStepInitial : -this._zStepInitial;
 
+            const stripEndX = this._getStripEndX(currentX);
+            let rowIndex = 0;
+
             for (let z = zStart; this._isZInRange(z, zEnd, zStep); z += zStep) {
-                const stripEndX = currentX + (this._stepSize - 1) * this._xStep;
-                
-                for (let localX = currentX; 
-                     this._isLocalXInStrip(localX, stripEndX); 
-                     localX += this._xStep) {
-                    
+                const isRowForward = (rowIndex % 2 === 0);
+                let localX = isRowForward ? currentX : stripEndX;
+                const localXEnd = isRowForward ? stripEndX : currentX;
+                const localXStep = isRowForward ? this._xStep : -this._xStep;
+
+                for (; this._isLocalXInRow(localX, localXEnd, localXStep); localX += localXStep) {
                     yield new Point3D(localX, this._startPos.y, z);
                 }
+
+                rowIndex++;
             }
 
             currentX += this._stepSize * this._xStep;
@@ -95,16 +100,28 @@ class FarmIterator {
     }
 
     /**
-     * Check if local X is within current strip
+     * Get clamped strip end X
      * @private
      */
-    _isLocalXInStrip(localX, stripEnd) {
+    _getStripEndX(currentX) {
+        const stripEndX = currentX + (this._stepSize - 1) * this._xStep;
         if (this._xStep > 0) {
-            return localX <= stripEnd && localX <= this._endPos.x;
-        } else {
-            return localX >= stripEnd && localX >= this._endPos.x;
+            return Math.min(stripEndX, this._endPos.x);
         }
+        return Math.max(stripEndX, this._endPos.x);
     }
+
+    /**
+     * Check if local X is within current row
+     * @private
+     */
+    _isLocalXInRow(localX, localXEnd, localXStep) {
+        if (localXStep > 0) {
+            return localX <= localXEnd;
+        }
+        return localX >= localXEnd;
+    }
+
 
     /**
      * Convert iterator to array (for debugging, avoid in production)

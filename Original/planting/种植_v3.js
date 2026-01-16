@@ -126,20 +126,12 @@ class PlantingApplication {
      * @private
      */
     _displayWelcomeMessage() {
-        Chat.log('§e═══════════════════════════════════════');
-        Chat.log('§a  Origin Realms - Planting Script v3.0.0');
-        Chat.log('§e═══════════════════════════════════════');
-        Chat.log('§7  Architecture: §fModular ES2022');
-        Chat.log('§7  Performance: §fGenerator-based');
-        Chat.log('§7  Standards: §fGoogle JS Style');
-        Chat.log('§e═══════════════════════════════════════');
-        Chat.log('');
-        Chat.log('§b[Setup] §fClick on the §eSEED CHEST §fto begin');
-        Chat.log('');
-        Chat.log('§7Controls:');
-        Chat.log('  §eX §7- Stop script');
-        Chat.log('  §eZ §7- Pause/Resume');
+        Chat.log(Chat.createTextBuilder()
+            .append("Click on the first block to set seed_chest position")
+            .withColor(0x2)
+            .build());
     }
+
 
     /**
      * Cleanup and shutdown

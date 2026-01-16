@@ -33,20 +33,21 @@ class FarmingExecutor {
                 name: 'Soil Placement',
                 chestPos: Point3D.from(cfg.chests.soil.supply),
                 dumpPos: Point3D.from(cfg.chests.soil.dump),
-                itemId: cfg.items.soil
+                itemNames: cfg.items.soil
             },
             [OperationMode.FERTILIZE]: {
                 name: 'Fertilizing',
                 chestPos: Point3D.from(cfg.chests.fertilizer.supply),
                 dumpPos: Point3D.from(cfg.chests.fertilizer.dump),
-                itemId: cfg.items.fertilizer
+                itemNames: cfg.items.fertilizer
             },
             [OperationMode.PLANT]: {
                 name: 'Planting Seeds',
-                itemId: cfg.items.seeds
+                itemNames: cfg.items.seeds
             }
         };
     }
+
 
     /**
      * Execute farming task
@@ -62,8 +63,9 @@ class FarmingExecutor {
         
         let chestPos = modeConfig.chestPos;
         let dumpPos = modeConfig.dumpPos;
-        const itemId = modeConfig.itemId;
+        const itemNames = modeConfig.itemNames;
         const actionName = modeConfig.name;
+
 
         if (mode === OperationMode.PLANT) {
             if (!state.seedChestPos) {
@@ -73,22 +75,24 @@ class FarmingExecutor {
             chestPos = state.seedChestPos;
             dumpPos = new Point3D(
                 chestPos.x,
-                chestPos.y + 2,
-                chestPos.z + 1
+                chestPos.y + 4,
+                chestPos.z + 2
             );
         }
+
 
         Chat.log(`§a[Start] ${actionName}...`);
         state.startExecution(mode);
 
         try {
-            this._executeSnakeWalk(state, chestPos, itemId);
+            this._executeSnakeWalk(state, chestPos, itemNames);
             
             this._inventoryService.transferToChest(
                 dumpPos,
                 this._config.items.transferList,
                 this._movementService
             );
+
             
             this._playerService.eat();
             
@@ -108,7 +112,7 @@ class FarmingExecutor {
      * Execute snake-walk pattern over farm area
      * @private
      */
-    _executeSnakeWalk(state, chestPos, itemId) {
+    _executeSnakeWalk(state, chestPos, itemNames) {
         const iterator = new FarmIterator(
             state.startPos,
             this._cropEndPos,
@@ -136,7 +140,7 @@ class FarmingExecutor {
 
             this._inventoryService.checkAndRefill(
                 chestPos,
-                itemId,
+                itemNames,
                 this._movementService,
                 state
             );
@@ -146,11 +150,12 @@ class FarmingExecutor {
             processedBlocks++;
             state.incrementStat('blocksProcessed');
 
-            if (processedBlocks % 100 === 0) {
+            if (processedBlocks % 300 === 0) {
                 Chat.log(`§b[Progress] ${processedBlocks}/${totalBlocks} blocks processed`);
             }
         }
     }
+
 
     /**
      * Perform interaction with block

@@ -99,6 +99,7 @@ class EventHandler {
         if (!target) return;
 
         event.cancel();
+        ctx.releaseLock();
 
         const pos = Point3D.fromBlock(target);
 
@@ -107,25 +108,29 @@ class EventHandler {
             this._state.setPhase(StatePhase.GET_POS_START);
             
             Chat.log(Chat.createTextBuilder()
-                .append(`✓ Seed Chest: ${pos}`)
-                .withColor(0x00FF00)
+                .append(`Seed_chest position set to: (${pos.x}, ${pos.y}, ${pos.z})`)
+                .withColor(0x2)
                 .build());
-            Chat.log('§e[Setup] Next: Click STARTING block for farm area');
+            Chat.log(Chat.createTextBuilder()
+                .append("Now click on the second block as the starting point")
+                .withColor(0x2)
+                .build());
             
         } else if (phase === StatePhase.GET_POS_START) {
             this._state.setStartPos(pos);
             this._state.setPhase(StatePhase.MODE_SELECT);
             
             Chat.log(Chat.createTextBuilder()
-                .append(`✓ Start Position: ${pos}`)
-                .withColor(0x00FF00)
+                .append(`Starting point set to: (${pos.x}, ${pos.y}, ${pos.z})`)
+                .withColor(0x2)
                 .build());
-            Chat.log('§a[Setup] Complete! Select mode:');
-            Chat.log('  §e1 §7- Soil Placement');
-            Chat.log('  §e2 §7- Fertilizing');
-            Chat.log('  §e3 §7- Plant Seeds');
+            Chat.log(Chat.createTextBuilder()
+                .append("Positions set. Press 1 for placing soil, 2 for fertilizing, 3 for planting seeds.")
+                .withColor(0x2)
+                .build());
         }
     }
+
 
     /**
      * Handle mode selection keys
@@ -134,7 +139,7 @@ class EventHandler {
     _handleModeSelection(event) {
         if (this._state.isRunning) {
             if ([this._keys.modeSoil, this._keys.modeFertilize, this._keys.modePlant].includes(event.key)) {
-                Chat.log('§c[Warning] Task already running. Please wait or press X to stop.');
+                Chat.log("§cAnother action is already running. Please wait until it finishes.");
             }
             return;
         }
@@ -153,6 +158,7 @@ class EventHandler {
             this._executor.execute(this._state, mode);
         }
     }
+
 }
 
 module.exports = EventHandler;

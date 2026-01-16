@@ -853,4 +853,3 @@ const mainEventListener = JsMacros.on("Key", JavaWrapper.methodToJava((event, ct
     }
 }));
 
-//TODO 1. jump的问题  2. 继续测试平滑视角 3.

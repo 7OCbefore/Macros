@@ -73,6 +73,25 @@ class Point3D {
     }
 
     /**
+     * Create a new point with offset
+     * @param {number} dx 
+     * @param {number} dy 
+     * @param {number} dz 
+     * @returns {Point3D}
+     */
+    add(dx, dy, dz) {
+        return new Point3D(this._x + dx, this._y + dy, this._z + dz);
+    }
+
+    /**
+     * Get block center coordinate (alias of toCenter)
+     * @returns {{x: number, y: number, z: number}}
+     */
+    toBlockCenter() {
+        return this.toCenter();
+    }
+
+    /**
      * Calculate Manhattan distance (faster, no sqrt)
      * @param {Point3D} other 
      * @returns {number}
@@ -82,6 +101,7 @@ class Point3D {
                Math.abs(this._y - other._y) + 
                Math.abs(this._z - other._z);
     }
+
 
     /**
      * Check equality with another point

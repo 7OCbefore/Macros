@@ -18,12 +18,13 @@
     }
   },
   "items": {
-    "soil": "minecraft:paper",
-    "fertilizer": "minecraft:paper",
-    "seeds": "minecraft:paper",
+    "soil": ["Bag o' Soil"],
+    "fertilizer": ["Produce Multiplier Fertilizer"],
+    "seeds": ["Apple Seeds", "Mango Pit", "Banana Seeds"],
     "refillTrigger": "minecraft:paper",
-    "transferList": ["minecraft:paper"]
+    "transferList": ["Bag o' Soil", "Produce Multiplier Fertilizer", "Apple Seeds", "Mango Pit", "Banana Seeds"]
   },
+
   "keybindings": {
     "close": "key.keyboard.x",
     "pause": "key.keyboard.z",
@@ -44,14 +45,17 @@
     "attackWaitTicks": 1,
     "moveWaitTicks": 1,
     "refillWaitTicks": 16,
-    "fertilizeWaitTicks": 1
+    "fertilizeWaitTicks": 1,
+    "lookSmoothSpeed": 0.2
   },
   "thresholds": {
     "stepSize": 5,
     "refillThreshold": 6,
     "foodLevel": 20,
-    "playerReach": 3
+    "playerReach": 3,
+    "stuckJumpThreshold": 20
   },
+
   "constants": {
     "maxInventorySlots": 36,
     "maxStackSize": 64
