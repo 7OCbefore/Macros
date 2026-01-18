@@ -132,6 +132,14 @@ class FarmingExecutor {
 
             this._waitIfPaused(state);
 
+            // Skip 5x5区域中心方块（灌溉方块），该方块交互不消耗物品
+            const offsetX = pos.x - state.startPos.x;
+            const offsetZ = pos.z - state.startPos.z;
+            if (offsetX % 5 === 2 && offsetZ % 5 === 2) {
+                state.incrementStat('blocksProcessed');
+                continue;
+            }
+
             if (!this._movementService.moveTo(pos, state)) {
                 Chat.log(`§c[Warning] Failed to reach ${pos}`);
                 state.incrementError();
