@@ -51,7 +51,20 @@ class MovementService {
         this._moveWaitTicks = config.timings.moveWaitTicks || 1;
         this._reachDistance = config.thresholds.playerReach || 3;
         this._stuckThreshold = config.thresholds.stuckJumpThreshold || 20;
+
+        const baseSpeed = config.timings.lookSmoothSpeed || 0.2;
+        this._lookSpeedMin = config.timings.lookSmoothSpeedMin || Math.max(0.05, baseSpeed * 0.6);
+        this._lookSpeedMax = config.timings.lookSmoothSpeedMax || Math.min(0.6, baseSpeed * 1.8);
+        this._lookTurnOnlyAngle = config.thresholds.lookTurnOnlyAngle || 35;
+        this._lookSlowdownAngle = config.thresholds.lookSlowdownAngle || 18;
+        this._lookSpeedAngleRange = config.thresholds.lookSpeedAngleRange || 90;
+        this._lookJitterAngle = config.thresholds.lookJitterAngle || 0.4;
+        this._lookJitterCutoff = config.thresholds.lookJitterCutoff || 12;
+        this._lookMicroPauseChance = config.thresholds.lookMicroPauseChance || 0.05;
+        this._lookMicroPauseAngle = config.thresholds.lookMicroPauseAngle || 6;
+        this._lookPitchLag = config.thresholds.lookPitchLag || 0.7;
     }
+
 
     /**
      * Move player to target position with optimization
@@ -86,10 +99,19 @@ class MovementService {
 
                 const rotation = this._smoothLookAt(center.x, center.y, center.z);
                 const shouldJump = stuckCount > this._stuckThreshold;
+                const yawDelta = Math.abs(this._normalizeAngle(rotation.targetYaw - rotation.currentYaw));
+                const isTurnOnly = yawDelta >= this._lookTurnOnlyAngle;
+                const forward = isTurnOnly ? 0.0 : this._computeForwardScale(yawDelta);
+
+                if (!isTurnOnly && this._shouldMicroPause(yawDelta)) {
+                    Client.waitTick(1);
+                }
 
                 inputQueue.enqueue(this._buildMovementFrame(rotation.yaw, rotation.pitch, {
+                    forward,
                     jump: shouldJump
                 }));
+
                 inputQueue.processNext();
 
                 Client.waitTick(this._moveWaitTicks);
@@ -155,18 +177,32 @@ class MovementService {
         const rawTargetYaw = Math.atan2(-dx, dz) * (180 / Math.PI);
         const rawTargetPitch = Math.atan2(-dy, dist) * (180 / Math.PI);
 
-        const speed = this._config.timings.lookSmoothSpeed || 0.2;
+        const yawDelta = Math.abs(this._normalizeAngle(rawTargetYaw - currentYaw));
+        const speed = this._computeLookSpeed(yawDelta);
         const idealYawDelta = this._normalizeAngle(rawTargetYaw - currentYaw) * speed;
-        const idealPitchDelta = this._normalizeAngle(rawTargetPitch - currentPitch) * speed;
+
+        const pitchSpeed = Math.max(0.02, speed * this._lookPitchLag);
+        const idealPitchDelta = this._normalizeAngle(rawTargetPitch - currentPitch) * pitchSpeed;
 
         const idealNextYaw = currentYaw + idealYawDelta;
         const idealNextPitch = currentPitch + idealPitchDelta;
 
-        const finalYaw = this._grimSnap(currentYaw, idealNextYaw);
-        const finalPitch = this._grimSnap(currentPitch, idealNextPitch);
+        let finalYaw = this._grimSnap(currentYaw, idealNextYaw);
+        let finalPitch = this._grimSnap(currentPitch, idealNextPitch);
 
-        return { yaw: finalYaw, pitch: finalPitch };
+        if (yawDelta <= this._lookJitterCutoff) {
+            finalYaw = this._applyJitter(finalYaw, this._lookJitterAngle);
+            finalPitch = this._applyJitter(finalPitch, this._lookJitterAngle * 0.6);
+        }
+
+        return {
+            yaw: finalYaw,
+            pitch: finalPitch,
+            targetYaw: rawTargetYaw,
+            currentYaw
+        };
     }
+
 
     /**
      * Grim GCD snap to valid mouse increments
@@ -224,6 +260,31 @@ class MovementService {
         const dz = center.z - pz;
         return Math.sqrt(dx * dx + dz * dz);
     }
+
+    _computeLookSpeed(yawDelta) {
+        const clamped = Math.min(Math.max(yawDelta, 0), this._lookSpeedAngleRange);
+        const t = clamped / this._lookSpeedAngleRange;
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        return this._lookSpeedMin + (this._lookSpeedMax - this._lookSpeedMin) * eased;
+    }
+
+    _computeForwardScale(yawDelta) {
+        if (yawDelta >= this._lookTurnOnlyAngle) return 0.0;
+        if (yawDelta <= this._lookSlowdownAngle) return 1.0;
+        const range = Math.max(1, this._lookTurnOnlyAngle - this._lookSlowdownAngle);
+        const t = (yawDelta - this._lookSlowdownAngle) / range;
+        return Math.max(0.2, 1.0 - t);
+    }
+
+    _applyJitter(value, amount) {
+        if (amount <= 0) return value;
+        return value + (Math.random() * 2 - 1) * amount;
+    }
+
+    _shouldMicroPause(yawDelta) {
+        return yawDelta <= this._lookMicroPauseAngle && Math.random() < this._lookMicroPauseChance;
+    }
+
 
     /**
      * Wait while state is paused

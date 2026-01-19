@@ -46,15 +46,26 @@
     "moveWaitTicks": 1,
     "refillWaitTicks": 16,
     "fertilizeWaitTicks": 1,
-    "lookSmoothSpeed": 0.2
+    "lookSmoothSpeed": 0.2,
+    "lookSmoothSpeedMin": 0.12,
+    "lookSmoothSpeedMax": 0.45
   },
   "thresholds": {
     "stepSize": 5,
     "refillThreshold": 6,
     "foodLevel": 20,
     "playerReach": 3,
-    "stuckJumpThreshold": 20
+    "stuckJumpThreshold": 20,
+    "lookTurnOnlyAngle": 35,
+    "lookSlowdownAngle": 18,
+    "lookSpeedAngleRange": 90,
+    "lookJitterAngle": 0.4,
+    "lookJitterCutoff": 12,
+    "lookMicroPauseChance": 0.05,
+    "lookMicroPauseAngle": 6,
+    "lookPitchLag": 0.7
   },
+
 
   "constants": {
     "maxInventorySlots": 36,
