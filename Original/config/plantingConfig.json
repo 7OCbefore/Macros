@@ -63,8 +63,6 @@
     "lookSpeedAngleRange": 90,
     "lookJitterAngle": 0.4,
     "lookJitterCutoff": 12,
-    "lookMicroPauseChance": 0.05,
-    "lookMicroPauseAngle": 6,
     "lookPitchLag": 0.7
   },
 

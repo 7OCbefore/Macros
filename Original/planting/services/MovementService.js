@@ -60,8 +60,6 @@ class MovementService {
         this._lookSpeedAngleRange = config.thresholds.lookSpeedAngleRange || 90;
         this._lookJitterAngle = config.thresholds.lookJitterAngle || 0.4;
         this._lookJitterCutoff = config.thresholds.lookJitterCutoff || 12;
-        this._lookMicroPauseChance = config.thresholds.lookMicroPauseChance || 0.05;
-        this._lookMicroPauseAngle = config.thresholds.lookMicroPauseAngle || 6;
         this._lookPitchLag = config.thresholds.lookPitchLag || 0.7;
     }
 
@@ -102,10 +100,6 @@ class MovementService {
                 const yawDelta = Math.abs(this._normalizeAngle(rotation.targetYaw - rotation.currentYaw));
                 const isTurnOnly = yawDelta >= this._lookTurnOnlyAngle;
                 const forward = isTurnOnly ? 0.0 : this._computeForwardScale(yawDelta);
-
-                if (!isTurnOnly && this._shouldMicroPause(yawDelta)) {
-                    Client.waitTick(1);
-                }
 
                 inputQueue.enqueue(this._buildMovementFrame(rotation.yaw, rotation.pitch, {
                     forward,
@@ -280,11 +274,6 @@ class MovementService {
         if (amount <= 0) return value;
         return value + (Math.random() * 2 - 1) * amount;
     }
-
-    _shouldMicroPause(yawDelta) {
-        return yawDelta <= this._lookMicroPauseAngle && Math.random() < this._lookMicroPauseChance;
-    }
-
 
     /**
      * Wait while state is paused
