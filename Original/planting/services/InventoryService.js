@@ -215,8 +215,10 @@ class InventoryService {
      */
     _transferFromChest(chestInv, chestSlots) {
         for (const slot of chestSlots) {
-            if (this.isInventoryFull(chestInv)) break;
-            
+            if (!this._canReceiveStack(chestInv, slot)) {
+                continue;
+            }
+
             const count = chestInv.getSlot(slot).getCount();
             if (count > 0) {
                 chestInv.quick(slot);
@@ -224,6 +226,36 @@ class InventoryService {
             }
         }
     }
+
+    _canReceiveStack(chestInv, chestSlotIndex) {
+        const map = chestInv.getMap();
+        if (!map?.main) {
+            return false;
+        }
+
+        const item = chestInv.getSlot(chestSlotIndex);
+        if (!item || item.isEmpty()) {
+            return false;
+        }
+
+        const itemId = item.getItemId();
+        const displayName = item.getName().getString();
+
+        for (const idx of map.main) {
+            const invItem = chestInv.getSlot(idx);
+            if (invItem.isEmpty()) {
+                return true;
+            }
+            if (invItem.getItemId() === itemId && invItem.getName().getString() === displayName) {
+                if (invItem.getCount() < invItem.getMaxCount()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     /**
      * Wait for container GUI to open
