@@ -13,7 +13,12 @@
 
 Hud.clearDraw3Ds();
 
+const FarmIterator = require('../core/FarmIterator.js');
+const CorePoint3D = require('../core/Point3D.js');
+const MovementService = require('./services/MovementService.js');
+
 // --- Constants ---
+
 const Config = {
     CLOSE_KEY: "key.keyboard.x",
     STEP_SIZE: 5,
@@ -23,70 +28,23 @@ const Config = {
     CHEST_WAIT_TICKS: 34,
     INV_CLOSE_WAIT_TICKS: 6,
     ATTACK_WAIT_TICKS: 1,
-    MOVE_WAIT_TICKS: 2,
-    LOOK_SMOOTH_SPEED: 0.2,
+    MOVE_WAIT_TICKS: 1,
+    LOOK_SMOOTH_SPEED: 0.25,
 };
 
-// 获取基于当前鼠标灵敏度的最小角度单位 (GCD)
-function getGCD() {
-    const options = Client.getGameOptions();
-    let sensitivity = 0.5;
-    try {
-        const sensObj = options.getMouseSensitivity ? options.getMouseSensitivity() : options.mouseSensitivity;
-        if (typeof sensObj === 'number') {
-            sensitivity = sensObj;
-        } else if (sensObj && typeof sensObj.getValue === 'function') {
-            sensitivity = sensObj.getValue();
-        }
-    } catch (e) {
-        sensitivity = 0.5;
+const movementService = new MovementService({
+    timings: {
+        moveWaitTicks: Config.MOVE_WAIT_TICKS,
+        lookSmoothSpeed: Config.LOOK_SMOOTH_SPEED
+    },
+    thresholds: {
+        playerReach: 3,
+        stuckJumpThreshold: 20
     }
-    const f = sensitivity * 0.6 + 0.2;
-    return f * f * f * 8.0 * 0.15;
-}
+});
 
-// 角度归一化到 [-180, 180]
-function normalizeAngle(angle) {
-    while (angle > 180) angle -= 360;
-    while (angle < -180) angle += 360;
-    return angle;
-}
 
-// Grim 算法：将角度量化为合法 GCD 网格值
-function grim(current, target) {
-    const gcd = getGCD();
-    const delta = normalizeAngle(target - current);
-    const mousePoints = Math.round(delta / gcd);
-    return current + (mousePoints * gcd);
-}
 
-// 平滑看向目标位置
-function smoothLookAt(targetX, targetY, targetZ, speed) {
-    const player = Player.getPlayer();
-    const currentYaw = player.getYaw();
-    const currentPitch = player.getPitch();
-
-    const eyeHeight = player.getEyeHeight ? player.getEyeHeight() : 1.62;
-    const playerEyeY = player.getY() + eyeHeight;
-
-    const dx = targetX - player.getX();
-    const dy = targetY - playerEyeY;
-    const dz = targetZ - player.getZ();
-    const dist = Math.sqrt(dx * dx + dz * dz);
-
-    const rawTargetYaw = Math.atan2(-dx, dz) * (180 / Math.PI);
-    const rawTargetPitch = Math.atan2(-dy, dist) * (180 / Math.PI);
-
-    const actualSpeed = speed !== undefined ? speed : Config.LOOK_SMOOTH_SPEED;
-
-    const idealYawDelta = normalizeAngle(rawTargetYaw - currentYaw) * actualSpeed;
-    const idealPitchDelta = normalizeAngle(rawTargetPitch - currentPitch) * actualSpeed;
-
-    const finalYaw = grim(currentYaw, currentYaw + idealYawDelta);
-    const finalPitch = grim(currentPitch, currentPitch + idealPitchDelta);
-
-    player.lookAt(finalYaw, finalPitch);
-}
 
 // --- State ---
 let State = {
@@ -123,7 +81,7 @@ const GameConfig = {
 
 
 JsMacros.on("Key", JavaWrapper.methodToJava((e, ctx) => {
-    if (e.key == Config.CLOSE_KEY) {
+    if (e.key === Config.CLOSE_KEY) {
         Chat.log('Script stopped.');
         JavaWrapper.stop();
     }
@@ -159,23 +117,10 @@ function eat() {
 
 // Function to move to a specific block
 function moveToBlock(targetPoint) {
-    const player = Player.getPlayer();
-    var dx = targetPoint.x - player.getX();
-    var dz = targetPoint.z - player.getZ();
-    smoothLookAt(targetPoint.x, targetPoint.y, targetPoint.z);
-    var distance = Math.sqrt(dx * dx + dz * dz);
-
-    while (distance > 3) {
-        smoothLookAt(targetPoint.x, targetPoint.y, targetPoint.z);
-        dx = targetPoint.x - player.getX();
-        dz = targetPoint.z - player.getZ();
-        distance = Math.sqrt(dx * dx + dz * dz);
-        KeyBind.keyBind("key.forward", true);
-        KeyBind.keyBind("key.sprint", true);
-        Client.waitTick(Config.MOVE_WAIT_TICKS);
-    }
-    KeyBind.keyBind("key.forward", false);
+    const pos = new CorePoint3D(targetPoint.x, targetPoint.y, targetPoint.z);
+    movementService.moveTo(pos);
 }
+
 
 // Function to check if the inventory is full
 function isInventoryFull() {
@@ -200,8 +145,8 @@ function transferItemsToChest(chestPoses, itemsToTransfer) {
 
         // 防止attack时间过长打碎方块
         // 最好聚焦在minecraft窗口，甚至别打开聊天框，esc 等GUI
-        smoothLookAt(chestPos.x + 0.5, chestPos.y + 0.5, chestPos.z + 0.5);
         moveToBlock(Point3D(chestPos.x + 0.5, chestPos.y + 0.5, chestPos.z + 0.5));
+
         Player.getInteractionManager().interactBlock(chestPos.x, chestPos.y, chestPos.z, player.getFacingDirection().getName(), false);
 
         // 循环等待，直到容器界面打开或超时
@@ -224,7 +169,7 @@ function transferItemsToChest(chestPoses, itemsToTransfer) {
 
         let emptySlots = 0;
         for (let j = 0; j < chestEndIndex; j++) {
-            if (inv.getSlot(j).getItemId() == "minecraft:air") {
+            if (inv.getSlot(j).getItemId() === "minecraft:air") {
                 emptySlots++;
             }
         }
@@ -267,52 +212,29 @@ function transferItemsToChest(chestPoses, itemsToTransfer) {
 }
 
 function snakeWalk(startPos, endPos, chestPos, itemsToTransfer, playerName) {
-    const startX = startPos.x;
-    const endX = endPos.x;
-    const startZ = startPos.z;
-    const endZ = endPos.z;
+    const iterator = new FarmIterator(
+        new CorePoint3D(startPos.x, startPos.y, startPos.z),
+        new CorePoint3D(endPos.x, endPos.y, endPos.z),
+        Config.STEP_SIZE
+    );
 
-    const xStep = Math.sign(endX - startX);
-    const zStepInitial = Math.sign(endZ - startZ);
+    for (const pos of iterator.iterate()) {
+        moveToBlock(Point3D(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5));
+        Player.getInteractionManager().attack(pos.x, pos.y, pos.z, 1, false);
+        Client.waitTick(Config.ATTACK_WAIT_TICKS);
 
-    let currentX = startX;
-    let group = 0;
-    let stepSize = Config.STEP_SIZE;
-
-    while ((xStep > 0 && currentX <= endX) || (xStep < 0 && currentX >= endX)) {
-        const middleX = currentX + xStep * Math.floor(5 / 2); // Fixed group size of 5
-
-        const zStart = (group % 2 === 0) ? startZ : endZ;
-        const zEnd = (zStart === startZ) ? endZ : startZ;
-        const zStep = (zStart === startZ) ? zStepInitial : -zStepInitial;
-
-        for (let z = zStart; (zStep > 0 && z <= zEnd) || (zStep < 0 && z >= zEnd); z += zStep) {
-
-            for (let localX = currentX;
-                (xStep > 0 && localX < currentX + 5 * xStep && localX <= endX) ||
-                (xStep < 0 && localX > currentX + 5 * xStep && localX >= endX);
-                localX += xStep) {
-
-                moveToBlock(Point3D(localX + 0.5, startPos.y + 0.5, z + 0.5));
-                Player.getInteractionManager().attack(localX, startPos.y, z, 1, false);
-                Client.waitTick(Config.ATTACK_WAIT_TICKS);
-
-                if (isInventoryFull()) {
-                    transferItemsToChest(chestPos, itemsToTransfer);
-                }
-            }
+        if (isInventoryFull()) {
+            transferItemsToChest(chestPos, itemsToTransfer);
         }
-
-        currentX += stepSize * xStep;
-        group++;
     }
 }
+
 
 // Prompt for user to select starting block
 const posCon = [];
 Chat.log(Chat.createTextBuilder().append("Click on the first block as the starting point").withColor(0x2).build());
 const click_event = JsMacros.on("Key", true, JavaWrapper.methodToJava((event, ctx) => {
-    if (event.key == "key.mouse.left" && event.action == 1) {
+    if (event.key === "key.mouse.left" && event.action === 1) {
         event.cancel();
         ctx.releaseLock();
         const block = Player.getInteractionManager().getTargetedBlock().toPos3D();
