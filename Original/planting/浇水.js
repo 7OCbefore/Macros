@@ -42,36 +42,37 @@ function moveToBlock(x, y, z) {
     KeyBind.keyBind("key.forward", false);
 }
 
-// 查找中心点的函数
+// 查找中心点的函数 - 竖向蛇形遍历 (从左下角开始向上)
 function findCenters(start, end) {
     const centers = [];
     const stepSize = 5;
-    
+
     let minX = Math.min(start[0], end[0]);
     let maxX = Math.max(start[0], end[0]);
     let minZ = Math.min(start[2], end[2]);
     let maxZ = Math.max(start[2], end[2]);
-    
-    let x = minX + 2;
-    let z = minZ + 2;
-    let goingRight = true;
 
-    while (z <= maxZ - 2) {
-        if (goingRight) {
-            while (x <= maxX - 2) {
+    // 从左下角开始 (minX+2, maxZ-2)
+    let x = minX + 2;
+    let z = maxZ - 2;
+    let goingUp = true;
+
+    while (x <= maxX - 2) {
+        if (goingUp) {
+            while (z >= minZ + 2) {
                 centers.push([x, start[1], z]);
-                x += stepSize;
+                z -= stepSize;
             }
-            x = maxX - 2;
+            z = minZ + 2;
         } else {
-            while (x >= minX + 2) {
+            while (z <= maxZ - 2) {
                 centers.push([x, start[1], z]);
-                x -= stepSize;
+                z += stepSize;
             }
-            x = minX + 2;
+            z = maxZ - 2;
         }
-        z += stepSize;
-        goingRight = !goingRight;
+        x += stepSize;
+        goingUp = !goingUp;
     }
 
     return centers;
