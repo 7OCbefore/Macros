@@ -21,13 +21,14 @@ class InventoryService {
 
     /**
      * Check and refill item from chest with inventory-first optimization
-     * @param {Point3D} chestPos 
-     * @param {string} itemId 
-     * @param {MovementService} movementService 
-     * @param {Object} state 
+     * @param {Point3D} chestPos
+     * @param {string} itemId
+     * @param {MovementService} movementService
+     * @param {Object} state
+     * @param {string} [logName] - Optional custom name for logging (useful when itemId is an array)
      * @returns {boolean} Success status
      */
-    checkAndRefill(chestPos, itemId, movementService, state) {
+    checkAndRefill(chestPos, itemId, movementService, state, logName) {
         const isChestPosArray = Array.isArray(chestPos);
         const targetChestPos = isChestPosArray ? Point3D.from(chestPos) : chestPos;
 
@@ -55,7 +56,7 @@ class InventoryService {
             return true;
         }
 
-        return this._refillFromChest(targetChestPos, itemId, movementService, state);
+        return this._refillFromChest(targetChestPos, itemId, movementService, state, logName);
     }
 
 
@@ -161,10 +162,16 @@ class InventoryService {
     /**
      * Refill from chest
      * @private
+     * @param {Point3D} chestPos
+     * @param {string|string[]} itemId
+     * @param {MovementService} movementService
+     * @param {Object} state
+     * @param {string} [logName] - Optional custom name for logging
+     * @returns {boolean}
      */
-    _refillFromChest(chestPos, itemId, movementService, state) {
+    _refillFromChest(chestPos, itemId, movementService, state, logName) {
         const isIdList = Array.isArray(itemId);
-        const nameLabel = isIdList ? itemId.join(', ') : String(itemId);
+        const nameLabel = logName || (isIdList ? itemId.join(', ') : String(itemId));
         Chat.log(`§e[Refill] ${nameLabel} count low. Going to chest at ${chestPos}...`);
         
         if (!movementService.moveTo(chestPos, state)) {

@@ -33,20 +33,18 @@ class FarmingExecutor {
                 name: 'Soil Placement',
                 chestPos: Point3D.from(cfg.chests.soil.supply),
                 dumpPos: Point3D.from(cfg.chests.soil.dump),
-                // itemNames: cfg.items.soil
-                itemNames: "Soil"
+                itemNames: cfg.items.soil
             },
             [OperationMode.FERTILIZE]: {
                 name: 'Fertilizing',
                 chestPos: Point3D.from(cfg.chests.fertilizer.supply),
                 dumpPos: Point3D.from(cfg.chests.fertilizer.dump),
-                // itemNames: cfg.items.fertilizer
-                itemNames: "fertilizer"
+                itemNames: cfg.items.fertilizer
             },
             [OperationMode.PLANT]: {
                 name: 'Planting Seeds',
-                // itemNames: cfg.items.seeds
-                itemNames: "seeds"
+                itemNames: cfg.items.seeds,
+                logName: 'seeds'
             }
         };
     }
@@ -153,7 +151,8 @@ class FarmingExecutor {
                 chestPos,
                 itemNames,
                 this._movementService,
-                state
+                state,
+                modeConfig.logName
             );
 
             this._performBlockInteraction(pos);
