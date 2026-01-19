@@ -13,9 +13,11 @@ class InventoryService {
         this._chestWaitTicks = config.timings.chestWaitTicks || 34;
         this._invCloseWaitTicks = config.timings.invCloseWaitTicks || 6;
         this._refillThreshold = config.thresholds.refillThreshold || 6;
-        
+        this._containerOpenRetries = config.timings.containerOpenRetries || 2;
+
         this._itemCache = new Map();
     }
+
 
     /**
      * Check and refill item from chest with inventory-first optimization
@@ -172,23 +174,16 @@ class InventoryService {
 
         const player = Player.getPlayer();
         const interactionMgr = Player.getInteractionManager();
-        
-        interactionMgr.interactBlock(
-            chestPos.x, 
-            chestPos.y, 
-            chestPos.z, 
-            player.getFacingDirection().getName(), 
-            false
-        );
 
-        if (!this._waitForContainer()) {
+        if (!this._openContainerWithRetry(chestPos, player, interactionMgr)) {
             Chat.log('§c[Refill] Timeout opening chest');
             return false;
         }
 
-        Client.waitTick(5);
+        Client.waitTick(this._chestWaitTicks);
 
         const chestInv = Player.openInventory();
+
         const chestSlots = this._findItemSlotsByName(chestInv, itemId);
 
         if (chestSlots.length === 0) {
@@ -198,12 +193,19 @@ class InventoryService {
         }
 
         this._transferFromChest(chestInv, chestSlots);
-        
+
+        const afterSlots = this._findItemSlotsByName(chestInv, itemId);
+        if (afterSlots.length === chestSlots.length) {
+            Client.waitTick(2);
+            this._transferFromChest(chestInv, chestSlots);
+        }
+
         chestInv.closeAndDrop();
         Client.waitTick(this._invCloseWaitTicks);
-        
+
         state?.incrementStat('refillCount');
         return true;
+
     }
 
 
@@ -234,8 +236,32 @@ class InventoryService {
             Client.waitTick(1);
             timeout--;
         }
+        if (timeout > 0) {
+            Client.waitTick(this._chestWaitTicks);
+        }
         return timeout > 0;
     }
+
+    _openContainerWithRetry(chestPos, player, interactionMgr) {
+        for (let attempt = 0; attempt <= this._containerOpenRetries; attempt++) {
+            interactionMgr.interactBlock(
+                chestPos.x,
+                chestPos.y,
+                chestPos.z,
+                player.getFacingDirection().getName(),
+                false
+            );
+
+            if (this._waitForContainer()) {
+                return true;
+            }
+
+            Client.waitTick(4 + attempt * 2);
+        }
+
+        return false;
+    }
+
 
     /**
      * Transfer specific items to chest
@@ -255,22 +281,15 @@ class InventoryService {
         }
 
         const player = Player.getPlayer();
-        Player.getInteractionManager().interactBlock(
-            targetChestPos.x, 
-            targetChestPos.y, 
-            targetChestPos.z, 
-            player.getFacingDirection().getName(), 
-            false
-        );
-
-        if (!this._waitForContainer()) {
+        if (!this._openContainerWithRetry(targetChestPos, player, Player.getInteractionManager())) {
             Chat.log('§c[Transfer] Timeout opening chest');
             return false;
         }
 
-        Client.waitTick(5);
+        Client.waitTick(this._chestWaitTicks);
 
         const inv = Player.openInventory();
+
         const map = inv.getMap();
 
         if (!map?.main) {

@@ -38,6 +38,7 @@
   },
   "timings": {
     "containerWaitTimeout": 100,
+    "containerOpenRetries": 2,
     "eatWaitTicks": 66,
     "postEatWaitTicks": 20,
     "chestWaitTicks": 34,
@@ -46,6 +47,7 @@
     "moveWaitTicks": 1,
     "refillWaitTicks": 16,
     "fertilizeWaitTicks": 1,
+
     "lookSmoothSpeed": 0.2,
     "lookSmoothSpeedMin": 0.12,
     "lookSmoothSpeedMax": 0.45
