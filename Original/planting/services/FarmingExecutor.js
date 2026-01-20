@@ -233,16 +233,19 @@ class FarmingExecutor {
 
         try {
             // 1. Refill from source (Look up and interact)
-            player.lookAt(waterSource.x + 0.5, waterSource.y + 0.5, waterSource.z + 0.5);
-            Client.waitTick(2);
-            interactionMgr.interactBlock(waterSource.x, waterSource.y, waterSource.z, 0, false);
-            Client.waitTick(2);
+            // Use smooth lookAt from MovementService
+            if (this._movementService.lookAt(waterSource, state)) {
+                Client.waitTick(2);
+                interactionMgr.interactBlock(waterSource.x, waterSource.y, waterSource.z, 0, false);
+                Client.waitTick(2);
+            }
 
             // 2. Water the crop (Look down at center and interact)
-            player.lookAt(centerPos.x + 0.5, centerPos.y + 0.5, centerPos.z + 0.5);
-            Client.waitTick(2);
-            interactionMgr.interactBlock(centerPos.x, centerPos.y, centerPos.z, 1, false);
-            Client.waitTick(2);
+            if (this._movementService.lookAt(centerPos, state)) {
+                Client.waitTick(2);
+                interactionMgr.interactBlock(centerPos.x, centerPos.y, centerPos.z, 1, false);
+                Client.waitTick(2);
+            }
 
             state.incrementStat('blocksProcessed');
         } catch (error) {

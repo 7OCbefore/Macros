@@ -193,10 +193,61 @@ class MovementService {
             yaw: finalYaw,
             pitch: finalPitch,
             targetYaw: rawTargetYaw,
+            targetPitch: rawTargetPitch,
             currentYaw
         };
     }
 
+
+    /**
+     * Smoothly rotate player head to look at target block center
+     * @param {Point3D} targetPos 
+     * @param {Object} state 
+     * @returns {boolean} Success
+     */
+    lookAt(targetPos, state = null) {
+        if (!(targetPos instanceof Point3D)) {
+            throw new TypeError('targetPos must be a Point3D instance');
+        }
+
+        const center = targetPos.toBlockCenter();
+        const inputQueue = new InputQueue();
+        let timeout = 60; // 3 seconds max
+
+        try {
+            while (timeout > 0) {
+                if (state?.isPaused) {
+                    this._waitDuringPause(state);
+                }
+
+                const rotation = this._smoothLookAt(center.x, center.y, center.z);
+                
+                // Apply rotation without movement
+                inputQueue.enqueue(this._buildMovementFrame(rotation.yaw, rotation.pitch, {
+                    forward: 0.0,
+                    sideways: 0.0,
+                    jump: false,
+                    sprint: false
+                }));
+                inputQueue.processNext();
+
+                // Check alignment
+                const yawDelta = Math.abs(this._normalizeAngle(rotation.targetYaw - rotation.currentYaw));
+                const player = Player.getPlayer();
+                const pitchDelta = Math.abs(this._normalizeAngle(rotation.targetPitch - player.getPitch()));
+
+                if (yawDelta < 2.0 && pitchDelta < 2.0) {
+                    return true;
+                }
+
+                Client.waitTick(1);
+                timeout--;
+            }
+            return false;
+        } finally {
+            inputQueue.clear();
+        }
+    }
 
     /**
      * Grim GCD snap to valid mouse increments
