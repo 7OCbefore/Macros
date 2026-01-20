@@ -155,7 +155,7 @@ class MovementService {
      * Smoothly rotate toward target using Grim GCD algorithm
      * @private
      */
-    _smoothLookAt(targetX, targetY, targetZ) {
+    _smoothLookAt(targetX, targetY, targetZ, speedMultiplier = 1.0) {
         const player = Player.getPlayer();
         const currentYaw = player.getYaw();
         const currentPitch = player.getPitch();
@@ -172,10 +172,10 @@ class MovementService {
         const rawTargetPitch = Math.atan2(-dy, dist) * (180 / Math.PI);
 
         const yawDelta = Math.abs(this._normalizeAngle(rawTargetYaw - currentYaw));
-        const speed = this._computeLookSpeed(yawDelta);
+        const speed = this._computeLookSpeed(yawDelta) * speedMultiplier;
         const idealYawDelta = this._normalizeAngle(rawTargetYaw - currentYaw) * speed;
 
-        const pitchSpeed = Math.max(0.02, speed * this._lookPitchLag);
+        const pitchSpeed = Math.max(0.02, speed * this._lookPitchLag * Math.min(1.5, speedMultiplier));
         const idealPitchDelta = this._normalizeAngle(rawTargetPitch - currentPitch) * pitchSpeed;
 
         const idealNextYaw = currentYaw + idealYawDelta;
@@ -203,9 +203,10 @@ class MovementService {
      * Smoothly rotate player head to look at target block center
      * @param {Point3D} targetPos 
      * @param {Object} state 
+     * @param {number} speedMultiplier
      * @returns {boolean} Success
      */
-    lookAt(targetPos, state = null) {
+    lookAt(targetPos, state = null, speedMultiplier = 1.0) {
         if (!(targetPos instanceof Point3D)) {
             throw new TypeError('targetPos must be a Point3D instance');
         }
@@ -220,7 +221,7 @@ class MovementService {
                     this._waitDuringPause(state);
                 }
 
-                const rotation = this._smoothLookAt(center.x, center.y, center.z);
+                const rotation = this._smoothLookAt(center.x, center.y, center.z, speedMultiplier);
                 
                 // Apply rotation without movement
                 inputQueue.enqueue(this._buildMovementFrame(rotation.yaw, rotation.pitch, {
@@ -236,7 +237,7 @@ class MovementService {
                 const player = Player.getPlayer();
                 const pitchDelta = Math.abs(this._normalizeAngle(rotation.targetPitch - player.getPitch()));
 
-                if (yawDelta < 2.0 && pitchDelta < 2.0) {
+                if (yawDelta < 5.0 && pitchDelta < 5.0) {
                     return true;
                 }
 
