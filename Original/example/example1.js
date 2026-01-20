@@ -1,134 +1,122 @@
-// test_farmingUtils.js
-const assert = require('assert');
+/**
+ * @file example1.js
+ * @description Get all slot indices and item names from container and inventory
+ * @version 1.0.0
+ */
 
-// --- Mocks Setup ---
-global.Chat = { 
-    log: (msg) => {
-        // Uncomment to see logs
-        // console.log('[MockChat]', msg && msg.getText ? msg.getText() : msg); 
-    },
-    createTextBuilder: () => ({
-        append: function() { return this; },
-        withColor: function() { return this; },
-        build: function() { return "MockText"; }
-    })
-};
+const outputFilePath = "D:/Minecraft/originRealms/.minecraft/versions/新新源神 启动！1.20.6-Fabric 0.16.0/config/jsMacros/Macros/Original/bossbars.txt";
 
-global.Client = { 
-    waitTick: (t) => {} 
-};
+/**
+ * Get all slots data from inventory (container + player inventory)
+ * @param {Object} inv - Inventory object from Player.openInventory()
+ * @returns {Array<{slot: number, name: string}>}
+ */
+function getAllSlotsData(inv) {
+    const totalSlots = inv.getTotalSlots();
+    const slotsData = [];
 
-global.Player = {
-    getPlayer: () => ({
-        lookAt: (x, y, z) => {},
-        distanceTo: (x, y, z) => 0.5, // Always close
-        getFoodLevel: () => 20,
-        getInteractionManager: () => ({ interactBlock: () => {} }),
-        getFacingDirection: () => ({ getName: () => "north" })
-    }),
-    openInventory: () => ({
-        findItem: (id) => [0],
-        getMap: () => ({ main: [0], hotbar: [0] }),
-        getSlot: (i) => ({ 
-            getCount: () => 64, 
-            getItemId: () => "minecraft:dirt",
-            isEmpty: () => false
-        }),
-        closeAndDrop: () => {},
-        swapHotbar: () => {},
-        getSelectedHotbarSlotIndex: () => 0,
-        quick: () => {}
-    }),
-    getInteractionManager: () => ({ 
-        interactBlock: (x, y, z, dir, sneak) => {} 
-    })
-};
+    for (let slotIndex = 0; slotIndex < totalSlots; slotIndex++) {
+        const item = inv.getSlot(slotIndex);
+        if (item) {
+            // Get name without any processing - raw string from Minecraft
+            const name = item.getName().getString();
+            slotsData.push({
+                slot: slotIndex,
+                name: name
+            });
+        }
+    }
 
-global.KeyBind = { 
-    keyBind: (key, state) => {}, 
-    key: (key, state) => {} 
-};
-
-global.Hud = { 
-    isContainer: () => true,
-    clearDraw3Ds: () => {} 
-};
-
-global.JavaWrapper = { 
-    methodToJava: (fn) => fn, 
-    stop: () => console.log("JavaWrapper.stop called") 
-};
-
-global.JsMacros = { 
-    on: (event, callback) => {} 
-};
-
-// --- Import Module ---
-const Utils = require('../common/farmingUtils.js');
-
-// --- Tests ---
-
-function testSnakeWalk() {
-    console.log("Running testSnakeWalk...");
-    
-    const start = [0, 64, 0];
-    const end = [2, 64, 2]; // 3x3 area: (0,0) to (2,2)
-    const chest = [10, 64, 10];
-    
-    let visited = [];
-    let state = { isActionRunning: true, isPaused: false };
-    
-    // Explicitly set step size for test if needed, or rely on default (5)
-    // Since area is small (width 3), step size 5 covers it in one go if logic is correct
-    // Utils uses Config.STEP_SIZE which defaults to 5.
-    
-    Utils.snakeWalk(start, end, chest, "minecraft:dirt", (x, y, z) => {
-        visited.push(`${x},${z}`);
-    }, state);
-
-    // Expected: 0,0 -> 1,0 -> 2,0 -> 2,1 -> 1,1 -> 0,1 -> 0,2 -> 1,2 -> 2,2 (Ordering depends on snake logic)
-    // Our logic: 
-    // Outer loop X (step 5).
-    // Inner loop Z.
-    // Inner-inner loop X (local).
-    
-    // With step 5, currentX starts at 0. 
-    // xStep is 1 (endX 2 > startX 0).
-    // Middle loop Z: starts 0, goes to 2.
-    // Inner loop localX: 0 to 4 (limited by endX=2). So 0, 1, 2.
-    
-    // Z=0: localX 0, 1, 2
-    // Z=1: localX 0, 1, 2
-    // Z=2: localX 0, 1, 2
-    // Wait, check snake logic for Z direction.
-    // zStart = (group%2==0) ? startZ : endZ. group=0 -> startZ (0).
-    // So Z goes 0 -> 1 -> 2.
-    
-    // Result should be 9 points.
-    assert.strictEqual(visited.length, 9, `Expected 9 points visited, got ${visited.length}: ${visited}`);
-    
-    // Check specific existence
-    assert.ok(visited.includes("0,0"));
-    assert.ok(visited.includes("2,2"));
-    
-    console.log("testSnakeWalk Passed!");
+    return slotsData;
 }
 
-function testConfigLoad() {
-    console.log("Running testConfigLoad...");
-    // Mock require for config (node will load actual file)
-    const config = Utils.loadConfig('../config/plantingConfig.json');
-    assert.ok(config, "Config should load successfully");
-    assert.ok(config.chests, "Config should have chests defined");
-    console.log("testConfigLoad Passed!");
+/**
+ * Write slots data to file
+ * @param {Array<{slot: number, name: string}>} slotsData
+ * @param {string} filePath
+ */
+function writeSlotsDataToFile(slotsData, filePath) {
+    let content = "";
+    
+    for (const data of slotsData) {
+        content += `Slot ${data.slot}: ${data.name}\n`;
+    }
+    
+    // FS.open() + FileHandler.write() will create or overwrite the file
+    const file = FS.open(filePath);
+    file.write(content);
+    // FileHandler auto-closes, no close() needed
+    Chat.log(`§a[Debug] Written ${slotsData.length} items to ${filePath}`);
 }
 
-// Run Tests
-try {
-    testConfigLoad();
-    testSnakeWalk();
-    console.log("All tests passed successfully.");
-} catch (e) {
-    console.error("Test Failed:", e);
-    process.exit(1);
+/**
+ * Main function - wait for container and output data
+ */
+function main() {
+    Chat.log("§a[Debug] Waiting for container to open...");
+    
+    // Wait for user to open a container or workbench
+    while (!Hud.isContainer()) {
+        Client.waitTick(1);
+    }
+    
+    // Container opened, get inventory data
+    Chat.log("§a[Debug] Container opened, retrieving data...");
+    
+    const inv = Player.openInventory();
+    if (!inv) {
+        Chat.log("§c[Debug] Failed to open inventory");
+        JavaWrapper.stop();
+        return;
+    }
+    
+    const slotsData = getAllSlotsData(inv);
+    
+    // Write to file
+    writeSlotsDataToFile(slotsData, outputFilePath);
+    
+    // Also log to chat for quick verification
+    Chat.log(`§e[Debug] Retrieved ${slotsData.length} slots:`);
+    for (const data of slotsData) {
+        Chat.log(`§7  Slot ${data.slot}: ${data.name}`);
+    }
+    
+    inv.close();
+    
+    Chat.log("§a[Debug] Done! Data written to " + outputFilePath);
+    JavaWrapper.stop();
+}
+
+// Start the script
+main();
+
+function craft (id, craftAll = true) {
+
+    let inv = Player.openInventory();//打开工作台后需要刷新背包
+    if (!!inv.getCraftableRecipes()) {//确认可以合成某些物品
+        if (!inv.getCraftableRecipes().toString().includes(id)) {//如果可合成物品没有包含需要合成物品的ID
+            inv.close();//关闭工作台
+            return false;//返回
+        }
+    }
+
+    const recipe = inv.getCraftableRecipes()?.find(r => (r.getOutput().getItemId() === id));//获得合成配方
+
+    if (!recipe) {//如果合成配方不存在
+        inv.close();//关闭工作台
+        return false;//返回
+    }
+
+    while (recipe.getCraftableAmount()) {//当可合成数量不为0
+        recipe.craft(craftAll);//合成（是否全部合成）
+        inv.quick(0);//将输出框物品全部取出到背包
+        Client.waitTick();//等待1tick
+    }
+    inv.close();//关闭工作台
+
+    while (Hud.getOpenScreenName()) {//当还有Hud在前台显示（即仍未关闭工作台）时 进行等待
+        Client.waitTick();
+    }
+
+    return true;//完成合成 退出函数
 }

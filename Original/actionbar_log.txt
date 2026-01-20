@@ -1,0 +1,90 @@
+Slot 0: ꢲ Apple
+Slot 1: ꢲ Apple Basket
+Slot 2: ꢲ Apple Basket
+Slot 3: ꢲ Apple Basket
+Slot 4: ꢲ Apple Basket
+Slot 5: ꢲ Apple Basket
+Slot 6: ꢲ Apple Basket
+Slot 7: ꢲ Apple Basket
+Slot 8: ꢲ Apple Basket
+Slot 9: ꢲ Apple Basket
+Slot 10: ꢲ Apple Basket
+Slot 11: ꢲ Apple Basket
+Slot 12: ꢲ Apple Basket
+Slot 13: ꢲ Apple Basket
+Slot 14: ꢲ Apple Basket
+Slot 15: ꢲ Apple Basket
+Slot 16: ꢲ Apple Basket
+Slot 17: ꢲ Apple Basket
+Slot 18: ꢲ Apple Basket
+Slot 19: ꢲ Apple Basket
+Slot 20: 空气
+Slot 21: 空气
+Slot 22: 空气
+Slot 23: 空气
+Slot 24: 空气
+Slot 25: 空气
+Slot 26: 空气
+Slot 27: 空气
+Slot 28: 空气
+Slot 29: 空气
+Slot 30: 空气
+Slot 31: 空气
+Slot 32: 空气
+Slot 33: 空气
+Slot 34: 空气
+Slot 35: 空气
+Slot 36: 空气
+Slot 37: 空气
+Slot 38: 空气
+Slot 39: 空气
+Slot 40: 空气
+Slot 41: 空气
+Slot 42: 空气
+Slot 43: 空气
+Slot 44: 空气
+Slot 45: 空气
+Slot 46: 空气
+Slot 47: 空气
+Slot 48: 空气
+Slot 49: 空气
+Slot 50: 空气
+Slot 51: 空气
+Slot 52: 空气
+Slot 53: 空气
+Slot 54: ꢲ Apple
+Slot 55: Totem of Keeping
+Slot 56: Winged Sandals
+Slot 57: ꢲ Apple
+Slot 58: ꢲ Apple
+Slot 59: ꢲ Apple
+Slot 60: ꢲ Apple
+Slot 61: ꢲ Apple
+Slot 62: ꢲ Apple
+Slot 63: ꢲ Apple
+Slot 64: ꢲ Apple
+Slot 65: ꢳ Apple
+Slot 66: ꢳ Apple
+Slot 67: 空气
+Slot 68: 空气
+Slot 69: 空气
+Slot 70: 空气
+Slot 71: 空气
+Slot 72: 空气
+Slot 73: 空气
+Slot 74: 空气
+Slot 75: 空气
+Slot 76: 空气
+Slot 77: 空气
+Slot 78: 空气
+Slot 79: 箭
+Slot 80: 熟猪排
+Slot 81: 空气
+Slot 82: 空气
+Slot 83: 空气
+Slot 84: 空气
+Slot 85: 空气
+Slot 86: 空气
+Slot 87: 空气
+Slot 88: 空气
+Slot 89: 空气

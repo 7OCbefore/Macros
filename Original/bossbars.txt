@@ -1,13 +1,46 @@
-为 @Original\\planting\\作物自动售货机.js 该脚本修改以下功能：
-- 当前版本将作物出售至拍卖行是通过 上架的组合如：3组Apple、3组Mango、2组Banana（占满玩家拍卖行共8个栏位），之
- 后当有人购买某种作物时，聊天框会弹出指定提示，通过获取聊天框内容来判断需要补充什么货物，从背包中检索到
- 该货物后，用Chat.say(`/auction ${price}`)指令上架该作物
-- 现在需要将该功能更改得更加智能。货物上架的操作逻辑进行更改为：
-1. 先从与jacko交互中得知当天jacko收购何种作物
-2. @Original\\test1.js 中测试了获取玩家拍卖行所有栏位（当前最多8个，使用"/ah player 7OCbefore"指
- 令打开后的8个栏位索引分别为\[20, 21, 22, 23, 24, 29, 30, 31];）中的内容的功能
-3. 通过之前从jacko那里得知的当天收购的作物，对玩家拍卖行的栏位进行检查，若玩家拍卖行的空白栏位
- 少于3个，则对被非当天收购作物占用的拍卖行栏位使用quick()方法来将该作物移回背包，直至空白栏位>=3后，再通
- 过与原版本相同的逻辑，使用`/auction ${price}`指令上架jacko当天收购的作物。
-- tips：当前只需要考虑Apple Mango Banana这三种作物，后期可能会增加一两种其他作物
-- 考虑Apple公司的高级工程师会怎么做，修改功能的同时可能会影响哪些未考虑到方面，以及其他需要考虑的方面。
+Slot 0: 空气
+Slot 1: 空气
+Slot 2: 空气
+Slot 3: 空气
+Slot 4: 空气
+Slot 5: 空气
+Slot 6: 空气
+Slot 7: 空气
+Slot 8: 空气
+Slot 9: 空气
+Slot 10: ꢲ Apple
+Slot 11: Totem of Keeping
+Slot 12: Winged Sandals
+Slot 13: 空气
+Slot 14: ꢲ Apple
+Slot 15: ꢲ Apple
+Slot 16: ꢲ Apple
+Slot 17: ꢲ Apple
+Slot 18: ꢲ Apple
+Slot 19: ꢲ Apple
+Slot 20: ꢲ Apple
+Slot 21: ꢳ Apple
+Slot 22: ꢳ Apple
+Slot 23: 空气
+Slot 24: 空气
+Slot 25: 空气
+Slot 26: 空气
+Slot 27: 空气
+Slot 28: 空气
+Slot 29: 空气
+Slot 30: 空气
+Slot 31: 空气
+Slot 32: 空气
+Slot 33: 空气
+Slot 34: 空气
+Slot 35: 箭
+Slot 36: 熟猪排
+Slot 37: ꢲ Apple
+Slot 38: 空气
+Slot 39: 空气
+Slot 40: 空气
+Slot 41: 空气
+Slot 42: 空气
+Slot 43: 空气
+Slot 44: 空气
+Slot 45: 空气

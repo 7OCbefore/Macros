@@ -109,7 +109,7 @@ class FarmingExecutor {
         state.startExecution(mode);
 
         try {
-            this._executeSnakeWalk(state, chestPos, itemNames);
+            this._executeSnakeWalk(state, chestPos, itemNames, modeConfig.logName);
             
             this._inventoryService.transferToChest(
                 dumpPos,
@@ -257,7 +257,7 @@ class FarmingExecutor {
      * Execute snake-walk pattern over farm area
      * @private
      */
-    _executeSnakeWalk(state, chestPos, itemNames) {
+    _executeSnakeWalk(state, chestPos, itemNames, logName) {
         const iterator = new FarmIterator(
             state.startPos,
             this._cropEndPos,
@@ -296,7 +296,7 @@ class FarmingExecutor {
                 itemNames,
                 this._movementService,
                 state,
-                modeConfig.logName
+                logName
             );
 
             this._performBlockInteraction(pos);
