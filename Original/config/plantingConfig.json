@@ -15,12 +15,16 @@
     "seeds": {
       "supply": [220, 55, 397],
       "dump": [220, 57, 398]
+    },
+    "water": {
+      "supply": [207, 56, 397]
     }
   },
   "items": {
     "soil": ["Bag o' Soil"],
     "fertilizer": ["Produce Multiplier Fertilizer"],
     "seeds": ["Apple Seeds", "Mango Pit", "Banana Seeds"],
+    "water": ["Wooden Watering Can"],
     "refillTrigger": "minecraft:paper",
     "transferList": ["Bag o' Soil", "Produce Multiplier Fertilizer", "Apple Seeds", "Mango Pit", "Banana Seeds"]
   },
@@ -34,7 +38,8 @@
     "leftClick": "key.mouse.left",
     "modeSoil": "key.keyboard.1",
     "modeFertilize": "key.keyboard.2",
-    "modePlant": "key.keyboard.3"
+    "modePlant": "key.keyboard.3",
+    "modeWater": "key.keyboard.4"
   },
   "timings": {
     "containerWaitTimeout": 100,

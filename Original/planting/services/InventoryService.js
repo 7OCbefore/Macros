@@ -61,6 +61,16 @@ class InventoryService {
 
 
     /**
+     * Find item slots by name (public wrapper)
+     * @param {string|string[]} itemNames 
+     * @returns {number[]}
+     */
+    findItemSlots(itemNames) {
+        const inv = Player.openInventory();
+        return this._findItemSlotsByName(inv, itemNames);
+    }
+
+    /**
      * Find item slots in inventory
      * @private
      */
@@ -364,6 +374,57 @@ class InventoryService {
         return nameSet.has(this._normalizeItemName(displayName)) || nameSet.has(this._normalizeTargetName(itemId));
     }
 
+
+    /**
+     * Retrieve specific number of items/stacks from chest
+     * @param {Point3D} chestPos
+     * @param {string|string[]} itemNames
+     * @param {MovementService} movementService
+     * @param {number} [limit=1] - Max number of stacks/items to retrieve
+     * @returns {boolean}
+     */
+    retrieveItem(chestPos, itemNames, movementService, limit = 1) {
+        const targetChestPos = Array.isArray(chestPos) ? Point3D.from(chestPos) : chestPos;
+        Chat.log(`§e[Retrieve] Fetching ${limit} ${Array.isArray(itemNames) ? itemNames[0] : itemNames}...`);
+
+        if (!movementService.moveTo(targetChestPos)) {
+            Chat.log('§c[Retrieve] Failed to reach chest');
+            return false;
+        }
+
+        const player = Player.getPlayer();
+        const interactionMgr = Player.getInteractionManager();
+
+        if (!this._openContainerWithRetry(targetChestPos, player, interactionMgr)) {
+            Chat.log('§c[Retrieve] Timeout opening chest');
+            return false;
+        }
+
+        Client.waitTick(this._chestWaitTicks);
+        const chestInv = Player.openInventory();
+        const chestSlots = this._findItemSlotsByName(chestInv, itemNames);
+
+        if (chestSlots.length === 0) {
+            Chat.log(`§c[Retrieve] Item not found in chest`);
+            chestInv.closeAndDrop();
+            return false;
+        }
+
+        let retrieved = 0;
+        for (const slot of chestSlots) {
+            if (retrieved >= limit) break;
+            
+            if (this._canReceiveStack(chestInv, slot)) {
+                chestInv.quick(slot);
+                Client.waitTick(1);
+                retrieved++;
+            }
+        }
+
+        chestInv.closeAndDrop();
+        Client.waitTick(this._invCloseWaitTicks);
+        return retrieved > 0;
+    }
 
     /**
      * Check if player inventory is full

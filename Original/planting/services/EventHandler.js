@@ -125,7 +125,7 @@ class EventHandler {
                 .withColor(0x2)
                 .build());
             Chat.log(Chat.createTextBuilder()
-                .append("Positions set. Press 1 for placing soil, 2 for fertilizing, 3 for planting seeds.")
+                .append("Positions set. Press 1 for placing soil, 2 for fertilizing, 3 for planting seeds, 4 for watering")
                 .withColor(0x2)
                 .build());
         }
@@ -138,7 +138,7 @@ class EventHandler {
      */
     _handleModeSelection(event) {
         if (this._state.isRunning) {
-            if ([this._keys.modeSoil, this._keys.modeFertilize, this._keys.modePlant].includes(event.key)) {
+            if ([this._keys.modeSoil, this._keys.modeFertilize, this._keys.modePlant, this._keys.modeWater].includes(event.key)) {
                 Chat.log("§cAnother action is already running. Please wait until it finishes.");
             }
             return;
@@ -152,10 +152,20 @@ class EventHandler {
             mode = OperationMode.FERTILIZE;
         } else if (event.key === this._keys.modePlant) {
             mode = OperationMode.PLANT;
+        } else if (event.key === this._keys.modeWater) {
+            mode = OperationMode.WATER;
         }
 
         if (mode) {
+            this._state.resetErrors();
             this._executor.execute(this._state, mode);
+            
+            // Auto-chain Water after Plant if successful
+            if (mode === OperationMode.PLANT && this._state.errorCount === 0) {
+                Chat.log("§a[Auto] Planting finished successfully. Starting Watering...");
+                Client.waitTick(20);
+                this._executor.execute(this._state, OperationMode.WATER);
+            }
         }
     }
 

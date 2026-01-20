@@ -45,6 +45,11 @@ class FarmingExecutor {
                 name: 'Planting Seeds',
                 itemNames: cfg.items.seeds,
                 logName: 'seeds'
+            },
+            [OperationMode.WATER]: {
+                name: 'Watering Plants',
+                chestPos: Point3D.from(cfg.chests.water.supply),
+                itemNames: cfg.items.water
             }
         };
     }
@@ -82,6 +87,24 @@ class FarmingExecutor {
         }
 
 
+        if (mode === OperationMode.WATER) {
+            Chat.log(`§a[Start] ${actionName}...`);
+            state.startExecution(mode);
+            try {
+                this._equipWateringCan(state, chestPos, itemNames);
+                this._executeWateringWalk(state);
+                Chat.log(`§a[Done] ${actionName} finished.`);
+                state.printStatistics();
+            } catch (error) {
+                Chat.log(`§c[Error] ${actionName} failed: ${error.message}`);
+                state.incrementError();
+            } finally {
+                state.stopExecution();
+                state.setPhase('MODE_SELECT');
+            }
+            return;
+        }
+
         Chat.log(`§a[Start] ${actionName}...`);
         state.startExecution(mode);
 
@@ -106,6 +129,124 @@ class FarmingExecutor {
         } finally {
             state.stopExecution();
             state.setPhase('MODE_SELECT');
+        }
+    }
+
+    /**
+     * Equip watering can
+     * @private
+     */
+    _equipWateringCan(state, chestPos, itemNames) {
+        const inv = Player.openInventory();
+        let slots = this._inventoryService.findItemSlots(itemNames);
+        
+        if (slots.length === 0) {
+            // Not in inventory, try chest - fetch ONLY ONE
+            if (!this._inventoryService.retrieveItem(chestPos, itemNames, this._movementService, 1)) {
+                throw new Error("Could not find watering can in chest");
+            }
+            Client.waitTick(10);
+            slots = this._inventoryService.findItemSlots(itemNames);
+            if (slots.length === 0) {
+                throw new Error("Watering can not found after chest access");
+            }
+        }
+
+        const slot = slots[0];
+        // Equip to slot 9 (index 8)
+        if (slot !== 8) {
+            inv.swapHotbar(slot, 8);
+            Client.waitTick(5);
+        }
+        inv.setSelectedHotbarSlotIndex(8);
+        Client.waitTick(5);
+        Chat.log(`§a[Water] Equipped Watering Can`);
+    }
+
+    /**
+     * Execute watering walk (sparse center iteration)
+     * @private
+     */
+    _executeWateringWalk(state) {
+        const start = state.startPos;
+        const end = this._cropEndPos;
+        const stepSize = 5;
+
+        // Calculate bounds logic from original script
+        const minX = Math.min(start.x, end.x);
+        const maxX = Math.max(start.x, end.x);
+        const minZ = Math.min(start.z, end.z);
+        const maxZ = Math.max(start.z, end.z);
+
+        // Start from +2 offset (center of 5x5)
+        let x = minX + 2;
+        let z = maxZ - 2;
+        let goingUp = true;
+        let processed = 0;
+
+        Chat.log(`§e[Info] Starting watering cycle...`);
+
+        while (x <= maxX - 2) {
+            if (!state.isRunning) break;
+
+            if (goingUp) {
+                while (z >= minZ + 2) {
+                    if (!state.isRunning) break;
+                    this._processWateringCenter(state, new Point3D(x, start.y, z));
+                    z -= stepSize;
+                    processed++;
+                }
+                z = minZ + 2;
+            } else {
+                while (z <= maxZ - 2) {
+                    if (!state.isRunning) break;
+                    this._processWateringCenter(state, new Point3D(x, start.y, z));
+                    z += stepSize;
+                    processed++;
+                }
+                z = maxZ - 2;
+            }
+
+            x += stepSize;
+            goingUp = !goingUp;
+        }
+    }
+
+    /**
+     * Process single watering center
+     * @private
+     */
+    _processWateringCenter(state, centerPos) {
+        this._waitIfPaused(state);
+
+        // Move to center block
+        if (!this._movementService.moveTo(centerPos, state)) {
+            Chat.log(`§c[Warning] Failed to reach ${centerPos}`);
+            state.incrementError();
+            return;
+        }
+
+        // Water source is 4 blocks above center
+        const waterSource = new Point3D(centerPos.x, centerPos.y + 4, centerPos.z);
+        const player = Player.getPlayer();
+        const interactionMgr = Player.getInteractionManager();
+
+        try {
+            // 1. Refill from source (Look up and interact)
+            player.lookAt(waterSource.x + 0.5, waterSource.y + 0.5, waterSource.z + 0.5);
+            Client.waitTick(2);
+            interactionMgr.interactBlock(waterSource.x, waterSource.y, waterSource.z, 0, false);
+            Client.waitTick(2);
+
+            // 2. Water the crop (Look down at center and interact)
+            player.lookAt(centerPos.x + 0.5, centerPos.y + 0.5, centerPos.z + 0.5);
+            Client.waitTick(2);
+            interactionMgr.interactBlock(centerPos.x, centerPos.y, centerPos.z, 1, false);
+            Client.waitTick(2);
+
+            state.incrementStat('blocksProcessed');
+        } catch (error) {
+            Chat.log(`§c[Error] Watering at ${centerPos} failed: ${error.message}`);
         }
     }
 

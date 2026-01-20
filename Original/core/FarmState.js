@@ -14,7 +14,8 @@ const StatePhase = Object.freeze({
 const OperationMode = Object.freeze({
     SOIL: 'SOIL',
     FERTILIZE: 'FERTILIZE',
-    PLANT: 'PLANT'
+    PLANT: 'PLANT',
+    WATER: 'WATER'
 });
 
 class FarmState {
