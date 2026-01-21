@@ -46,15 +46,10 @@ class JackoService {
             this._state.isJackoMode = true;
 
             const requiredAmount = 64 * 3;
-            const hasSellableItems = this._hasSellableItems();
             if (!this._checkCropQuantities(requiredAmount)) {
-                if (!hasSellableItems) {
-                    if (!this._replenishCropBaskets(requiredAmount)) {
-                        this._returnToBase();
-                        return false;
-                    }
-                } else {
-                    this._logger.info('Proceeding with available sellable items.', 'Jacko');
+                if (!this._replenishCropBaskets(requiredAmount)) {
+                    this._returnToBase();
+                    return false;
                 }
             }
 

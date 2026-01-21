@@ -27,7 +27,7 @@
     "scheduleAfterSellWait": 168,
     "scheduleTickInterval": 2134,
     "adMinDelay": 60,
-    "adMaxDelay": 1666
+    "adMaxDelay": 160
   },
   "thresholds": {
     "moveDistance": 5,

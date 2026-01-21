@@ -120,9 +120,15 @@ lilster03 bought your 64x ꢲ Apple for 800 rubies!
 可以确定的一点是作物前缀不可叠加，不可能出现类似"Golden ꢲ Apple"这样的作物name
 用户认为可以对golden作物的售卖使用一个很简单的逻辑，无论角色的背包中是否有golden作物，都对jacko中的golden槽位进行quick()操作，即售卖操作
 
+启动@Original\planting\作物自动售货机-v2.js 脚本后，log信息中显示[Vending][Jacko][WARN] Not enough ꢲ Banana (64/192).
+但是脚本却没有执行从箱子中拿出baskets拆分为多组banana的操作，而是直接使用指令去往jacko进行售卖
+分析问题所在，并给出解决方案
+
 ## rerequirement-7
-种植前置 购买 soil,fertilizer,seeds
+种植的前置操作 判断箱子中 soil,fertilizer,seeds是否充足，如果不充足则进行购买。
+soil,fertilizer是写在配置中的固定箱子，只需要再修改
+
 购买soil或fertilizer的操作逻辑：
 1. 传送到yellow balloon
 2. 走向[-79,69,-133]→走向[-80,71,-141]并与在该坐标站着的Jeckyl交互两次（交互逻辑与Jacko一样）
-3. 
+3. 使用quick()函数对短缺的物品进行购买，如果soil和fertilizer都短缺，则按顺序先购买soil，再购买fertilize
