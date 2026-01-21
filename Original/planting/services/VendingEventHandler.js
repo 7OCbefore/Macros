@@ -68,7 +68,7 @@ class EventHandler {
 
     _handleMessage(event) {
         const text = event.text ? event.text.getString() : '';
-        const parsed = this._messageParser.parseSaleMessage(text, this._config.cropData);
+        const parsed = this._messageParser.parseSaleMessage(text);
         if (!parsed) {
             return;
         }
@@ -78,7 +78,7 @@ class EventHandler {
             this._logger.info(`Default price set to ${parsed.price}.`, 'Auction');
         }
 
-        this._queueService.enqueueSale(parsed.cropName, parsed.amount);
+        this._queueService.enqueueSale(parsed.cropId, parsed.quality, parsed.amount);
         if (!this._state.isJackoMode && !this._state.isProcessing) {
             this._queueService.processQueue();
         }

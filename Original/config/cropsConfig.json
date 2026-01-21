@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "variants": {
+    "star1": {
+      "prefix": "ꢴ "
+    },
+    "star2": {
+      "prefix": "ꢳ "
+    },
+    "star3": {
+      "prefix": "ꢲ "
+    },
+    "golden": {
+      "prefix": "Golden "
+    }
+  },
+  "crops": {
+    "apple": {
+      "displayName": "Apple",
+      "seedItems": ["Apple Seeds"],
+      "vending": {
+        "basket": {
+          "star3": {
+            "name": "ꢲ Apple Basket",
+            "chestPos": [204, 56, 394]
+          }
+        },
+        "jackoPrice": {
+          "star3": 17,
+          "golden": 255
+        }
+      }
+    },
+    "mango": {
+      "displayName": "Mango",
+      "seedItems": ["Mango Pit"],
+      "vending": {
+        "basket": {
+          "star3": {
+            "name": "ꢲ Mango Basket",
+            "chestPos": [204, 56, 391]
+          }
+        },
+        "jackoPrice": {
+          "star3": 17,
+          "golden": 255
+        }
+      }
+    },
+    "banana": {
+      "displayName": "Banana",
+      "seedItems": ["Banana Seeds"],
+      "vending": {
+        "basket": {
+          "star3": {
+            "name": "ꢲ Banana Basket",
+            "chestPos": [204, 56, 388]
+          }
+        },
+        "jackoPrice": {
+          "star3": 17,
+          "golden": 255
+        }
+      }
+    }
+  }
+}

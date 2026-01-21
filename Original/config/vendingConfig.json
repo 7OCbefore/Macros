@@ -49,26 +49,6 @@
       "/ad anyone need some crops check my ah"
     ]
   },
-  "cropData": {
-    "Apple": {
-      "name": "Apple",
-      "basket": "AppleBasket",
-      "chestPos": [204, 56, 394],
-      "sellForJackoPrice": 17
-    },
-    "Mango": {
-      "name": "Mango",
-      "basket": "MangoBasket",
-      "chestPos": [204, 56, 391],
-      "sellForJackoPrice": 17
-    },
-    "Banana": {
-      "name": "Banana",
-      "basket": "BananaBasket",
-      "chestPos": [204, 56, 388],
-      "sellForJackoPrice": 17
-    }
-  },
   "logging": {
     "enabled": true,
     "level": "info",

@@ -21,6 +21,7 @@ const InventoryService = require('../services/InventoryService.js');
 const PlayerService = require('../services/PlayerService.js');
 const FarmingExecutor = require('../services/FarmingExecutor.js');
 const EventHandler = require('../services/EventHandler.js');
+const CropRegistry = require('../services/CropRegistry.js');
 
 /**
  * Main application class
@@ -28,6 +29,7 @@ const EventHandler = require('../services/EventHandler.js');
 class PlantingApplication {
     constructor() {
         this._config = null;
+        this._cropRegistry = null;
         this._state = null;
         this._services = {};
         this._eventHandler = null;
@@ -57,14 +59,38 @@ class PlantingApplication {
      * Load and validate configuration
      * @private
      */
-        _loadConfiguration() {
-            this._config = ConfigLoader.load('../config/plantingConfig.json');
-        
+    _loadConfiguration() {
+        this._config = ConfigLoader.load('../config/plantingConfig.json');
+        const cropsConfig = ConfigLoader.load('../config/cropsConfig.json');
+
         if (!this._config) {
             throw new Error('Failed to load plantingConfig.json');
         }
+        if (!cropsConfig) {
+            throw new Error('Failed to load cropsConfig.json');
+        }
 
+        this._cropRegistry = new CropRegistry(cropsConfig);
+        this._syncSeedItems();
         this._validateConfiguration();
+    }
+
+    _syncSeedItems() {
+        const seedItems = this._cropRegistry.getSeedItems();
+        if (!this._config.items) {
+            this._config.items = {};
+        }
+        this._config.items.seeds = seedItems;
+
+        const transferList = Array.isArray(this._config.items.transferList)
+            ? [...this._config.items.transferList]
+            : [];
+        for (const seed of seedItems) {
+            if (!transferList.includes(seed)) {
+                transferList.push(seed);
+            }
+        }
+        this._config.items.transferList = transferList;
     }
 
     /**

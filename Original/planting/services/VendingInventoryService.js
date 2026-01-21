@@ -4,13 +4,17 @@
  */
 
 class InventoryService {
-    constructor(config, logger) {
+    constructor(config, logger, cropRegistry) {
         this._config = config;
         this._logger = logger;
+        this._cropRegistry = cropRegistry;
     }
 
     normalizeItemName(name) {
-        return (name || '').replace(/[^a-zA-Z]+/g, '').trim();
+        if (this._cropRegistry) {
+            return this._cropRegistry.normalizeDisplayName(name);
+        }
+        return (name || '').replace(/§[0-9A-FK-OR]/gi, '').trim();
     }
 
     findItemSlotsByName(inventory, itemName) {

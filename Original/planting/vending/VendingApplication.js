@@ -15,10 +15,12 @@ const QueueService = require('../services/QueueService.js');
 const JackoService = require('../services/JackoService.js');
 const Scheduler = require('../services/Scheduler.js');
 const EventHandler = require('../services/VendingEventHandler.js');
+const CropRegistry = require('../services/CropRegistry.js');
 
 class VendingApplication {
     constructor() {
         this._config = null;
+        this._cropsConfig = null;
         this._state = new VendingState();
         this._logger = null;
         this._services = {};
@@ -54,34 +56,37 @@ class VendingApplication {
 
     _loadConfiguration() {
         this._config = ConfigLoader.load('../config/vendingConfig.json');
+        const cropsConfig = ConfigLoader.load('../config/cropsConfig.json');
         if (!this._config) {
             throw new Error('Failed to load vendingConfig.json');
         }
+        if (!cropsConfig) {
+            throw new Error('Failed to load cropsConfig.json');
+        }
 
-        this._validateConfiguration();
-        this._config.cropDataMap = this._buildCropDataMap(this._config.cropData);
+        this._validateConfiguration(cropsConfig);
+        this._cropsConfig = cropsConfig;
     }
 
-    _validateConfiguration() {
-        const required = ['scriptConfig', 'timings', 'thresholds', 'jackoData', 'cropData'];
+    _validateConfiguration(cropsConfig) {
+        const required = ['scriptConfig', 'timings', 'thresholds', 'jackoData'];
         for (const key of required) {
             if (!this._config[key]) {
                 throw new Error(`Missing configuration section: ${key}`);
             }
         }
-    }
 
-    _buildCropDataMap(cropData) {
-        const map = {};
-        for (const cropKey in cropData) {
-            const name = (cropData[cropKey].name || '').replace(/[^a-zA-Z]+/g, '').trim();
-            map[name] = cropData[cropKey];
+        const cropRequired = ['variants', 'crops'];
+        for (const key of cropRequired) {
+            if (!cropsConfig[key]) {
+                throw new Error(`Missing crops configuration section: ${key}`);
+            }
         }
-        return map;
     }
 
     _initializeServices() {
-        this._services.inventory = new InventoryService(this._config, this._logger);
+        this._services.cropRegistry = new CropRegistry(this._cropsConfig, this._logger);
+        this._services.inventory = new InventoryService(this._config, this._logger, this._services.cropRegistry);
         this._services.movement = new MovementService(this._config, this._logger);
         this._services.basket = new BasketService(
             this._config,
@@ -101,7 +106,7 @@ class VendingApplication {
             this._state,
             this._services.auction,
             this._services.basket,
-            this._config.cropData
+            this._services.cropRegistry
         );
         this._services.jacko = new JackoService(
             this._config,
@@ -111,7 +116,7 @@ class VendingApplication {
             this._services.movement,
             this._services.basket,
             this._services.queue,
-            this._config.cropDataMap
+            this._services.cropRegistry
         );
         this._services.scheduler = new Scheduler(
             this._config,
@@ -119,7 +124,7 @@ class VendingApplication {
             this._state,
             this._services.jacko
         );
-        this._services.parser = new MessageParser(this._config, this._logger);
+        this._services.parser = new MessageParser(this._config, this._logger, this._services.cropRegistry);
     }
 
     _setupEventHandlers() {

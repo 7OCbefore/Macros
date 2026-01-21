@@ -6,7 +6,7 @@
 const Point3D = require('../../core/Point3D.js');
 
 class JackoService {
-    constructor(config, logger, state, inventoryService, movementService, basketService, queueService, cropDataMap) {
+    constructor(config, logger, state, inventoryService, movementService, basketService, queueService, cropRegistry) {
         this._config = config;
         this._logger = logger;
         this._state = state;
@@ -14,7 +14,7 @@ class JackoService {
         this._movementService = movementService;
         this._basketService = basketService;
         this._queueService = queueService;
-        this._cropDataMap = cropDataMap;
+        this._cropRegistry = cropRegistry;
     }
 
     getBossBarInfo() {
@@ -88,8 +88,9 @@ class JackoService {
     _checkCropQuantities(targetAmount) {
         const inventory = Player.openInventory();
 
-        for (const cropKey in this._config.cropData) {
-            const cropName = this._config.cropData[cropKey].name;
+        const cropIds = this._cropRegistry.getCropIds();
+        for (const cropId of cropIds) {
+            const cropName = this._cropRegistry.getItemName(cropId, 'star3');
             const total = this._inventoryService.countItemsByName(inventory, cropName);
             if (total < targetAmount) {
                 this._logger.warn(`Not enough ${cropName} (${total}/${targetAmount}).`, 'Jacko');
@@ -102,9 +103,13 @@ class JackoService {
     }
 
     _replenishCropBaskets(requiredAmount) {
-        for (const cropKey in this._config.cropData) {
-            const cropInfo = this._config.cropData[cropKey];
-            const cropName = cropInfo.name;
+        const cropIds = this._cropRegistry.getCropIds();
+        for (const cropId of cropIds) {
+            const cropName = this._cropRegistry.getItemName(cropId, 'star3');
+            const basketInfo = this._cropRegistry.getBasketInfo(cropId, 'star3');
+            if (!basketInfo) {
+                continue;
+            }
 
             const inventory = Player.openInventory();
             const total = this._inventoryService.countItemsByName(inventory, cropName);
@@ -115,12 +120,12 @@ class JackoService {
 
             this._logger.info(`Restocking ${cropName} basket.`, 'Jacko');
 
-            if (!this._basketService.getBasketFromChest(cropInfo.basket, cropInfo.chestPos)) {
+            if (!this._basketService.getBasketFromChest(basketInfo.name, basketInfo.chestPos)) {
                 this._logger.warn(`Failed to fetch ${cropName} basket.`, 'Jacko');
                 return false;
             }
 
-            if (!this._basketService.openBasketInInventory(cropInfo.basket)) {
+            if (!this._basketService.openBasketInInventory(basketInfo.name)) {
                 this._logger.warn(`Failed to open ${cropName} basket.`, 'Jacko');
                 return false;
             }
@@ -224,26 +229,29 @@ class JackoService {
                 continue;
             }
 
-            const itemName = this._inventoryService.normalizeItemName(item.getName().getString());
+            const displayName = item.getName().getString();
             const stackSize = item.getCount();
-            const cropInfo = this._cropDataMap[itemName];
-
-            if (cropInfo && stackSize === cropInfo.sellForJackoPrice) {
-                matchedSlots.push(i);
-                adDelayTicks = this._getRandomNumber(
-                    this._config.timings.adMinDelay,
-                    this._config.timings.adMaxDelay
-                );
-                if (messages.length > 0) {
-                    Client.waitTick(adDelayTicks);
-                    const randomMessage = messages[this._getRandomNumber(0, messages.length - 1)];
-                    Chat.say(randomMessage);
-                }
+            const parsed = this._cropRegistry.parseItemName(displayName);
+            if (!parsed.cropId || !this._cropRegistry.canSellQuality(parsed.quality)) {
+                continue;
             }
 
-            if (itemName.includes('Golden')) {
-                matchedSlots.push(i);
+            const expectedPrice = this._cropRegistry.getJackoPrice(parsed.cropId, parsed.quality);
+            if (typeof expectedPrice === 'number' && stackSize !== expectedPrice) {
+                continue;
             }
+
+            matchedSlots.push(i);
+            adDelayTicks = this._getRandomNumber(
+                this._config.timings.adMinDelay,
+                this._config.timings.adMaxDelay
+            );
+            if (messages.length > 0) {
+                Client.waitTick(adDelayTicks);
+                const randomMessage = messages[this._getRandomNumber(0, messages.length - 1)];
+                Chat.say(randomMessage);
+            }
+
         }
 
         return { slots: matchedSlots, adDelayTicks };

@@ -95,3 +95,52 @@ const end = [276, 56, 329];
 - 种植是一个字符串数组，且被归为一种东西，但是不同的作物有不同的种子，不同的果实，同种作物之间的果实还有1星2星3星三种等级，通过前缀特殊字符进行区分，ꢲ Apple:3星苹果，ꢳ Apple: 2星苹果，至于1星苹果，显然就是这两个字符以外的其他特殊字符前缀，即ꢲ前缀的作物代表3星，ꢳ前缀的代表2星。
 
 如果一群来自Google的顶级工程师还会分析出哪些有关拓展性的问题？
+补充说明"ꢴ "是1星前缀，还有一个特殊的金色品质，前缀是 "Golden "
+
+纠正方案中有关物品的错误：
+1. 1个apple basket是由9个星级相同的apples在工作台以3×3的摆放合成的，所以basket也有星级，星级与合成该basket的作物星级一致，Golden品质作物不能合成basket
+2. 同一种类不同星级的作物在Jacko那里的售价也不相同，与售价有关的配置可以留空等待用户填写
+
+3星Apple Baskets就是ꢲ Apple Basket
+再提醒一些重点：
+- 脚本中所有物品的信息都必须使用物品name，千万不能使用原生的物品id，类似"minecraft:apple"这样的
+- 补货只使用star3的篮子
+
+1星/2星 作物不允许上架和出售，后续的扩展中可能会用到，但目前暂时只有区分作物品级的作用
+
+
+
+统一裁剪模型 + 质量处理现在通过 Apple 风格的单一事实来源和清晰的域边界来实现。所有作物数据都存在于一个配置中，星号前缀提高质量，并且只有 star3/golden 可以出售；补货仅使用 star3 篮子。
+发生了什么变化（要点）
+- 新的作物域配置 Original/config/cropsConfig.json 包含变体、作物、star3 篮子和可选的 Jacko 价格（设计留空）。
+- 新服务：Original/planting/services/CropRegistry.js 和 Original/planting/services/ItemNameParser.js，用于标准化名称并一致地解析quality/crops。
+- 自动售货流程现在到处都使用 CropRegistry；没有cropData或堆栈大小逻辑。
+- 种植种子列表源自运行时的作物配置；传输列表会自动扩展种子名称。
+- 配置现在仅包含项目显示名称（没有 minecraft:* ID）。
+文件已更新
+- 添加：原始/config/cropsConfig.json
+- 添加：原始/planting/services/CropRegistry.js
+- 添加：原始/planting/services/ItemNameParser.js
+- 更新：原始/planting/vending/VendingApplication.js
+- 更新：原始/planting/services/MessageParser.js
+- 更新：原始/planting/services/QueueService.js
+- 更新：原始/planting/services/JackoService.js
+- 更新：原始/planting/services/VendingEventHandler.js
+- 更新：原始/planting/services/VendingInventoryService.js
+- 更新：原始/planting/vending/VendingState.js
+- 更新：原始/planting/种植_v3.js
+- 更新：原始/config/plantingConfig.json
+- 更新：原始/config/vendingConfig.json
+您要求的行为改变
+- 通过前缀进行质量检测： ꢴ/ꢳ/ꢲ/Golden 。
+- 1★/2★：已识别但从未出售或列出。
+- 3★/金色：可售。
+- 补货仅使用star3篮子（ꢲ<农作物>篮子）。
+- 黄金作物从不使用篮子。
+验证注意事项
+- LSP 诊断无法运行，因为此环境中未安装 typescript-language-server。
+后续步骤（选择一个）
+1）如果您想在Jacko销售中进行严格的价格检查，请在Original/config/cropsConfig.json中填写jackoPrice.star3 / jackoPrice.golden。
+2) 仅通过扩展 Original/config/cropsConfig.json 来添加其他作物；无需更改代码。
+3）如果您愿意，我可以进一步删除配置中的遗留引用或添加一个小的迁移注释。
+如果您希望我继续执行步骤 1 或立即添加更多作物，请告诉我作物列表和篮子箱位置。

@@ -23,10 +23,10 @@
   "items": {
     "soil": ["Bag o' Soil"],
     "fertilizer": ["Produce Multiplier Fertilizer"],
-    "seeds": ["Apple Seeds", "Mango Pit", "Banana Seeds"],
+    "seeds": [],
     "water": ["Wooden Watering Can"],
-    "refillTrigger": "minecraft:paper",
-    "transferList": ["Bag o' Soil", "Produce Multiplier Fertilizer", "Apple Seeds", "Mango Pit", "Banana Seeds"]
+    "refillTrigger": "Paper",
+    "transferList": ["Bag o' Soil", "Produce Multiplier Fertilizer"]
   },
 
   "keybindings": {

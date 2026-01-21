@@ -4,40 +4,39 @@
  */
 
 class MessageParser {
-    constructor(config, logger) {
+    constructor(config, logger, cropRegistry) {
         this._config = config;
         this._logger = logger;
+        this._cropRegistry = cropRegistry;
     }
 
-    parseSaleMessage(message, cropData) {
+    parseSaleMessage(message) {
         if (!message || !message.includes('bought your')) {
             return null;
         }
 
-        let cropName = '';
-        let amount = this._config.scriptConfig.defaultSellAmount;
-        let price = this._config.scriptConfig.defaultAuctionPrice;
-
-        const match = message.match(/bought your (\d+)x ([\w\s]+) for (\d+) rubies/);
-        if (match) {
-            amount = parseInt(match[1], 10);
-            cropName = match[2].trim();
-            price = parseInt(match[3], 10);
-        }
-
-        for (const cropKey in cropData) {
-            if (message.includes(cropData[cropKey].name)) {
-                cropName = cropData[cropKey].name;
-                break;
-            }
-        }
-
-        if (!cropName) {
-            this._logger.warn('Sale message matched but crop name not found.', 'Parser');
+        const match = message.match(/bought your (\d+)x (.+) for (\d+) rubies/);
+        if (!match) {
+            this._logger.warn('Sale message matched but parse failed.', 'Parser');
             return null;
         }
 
-        return { cropName, amount, price };
+        const amount = parseInt(match[1], 10);
+        const rawItemName = match[2].trim();
+        const price = parseInt(match[3], 10);
+
+        const parsed = this._cropRegistry.parseItemName(rawItemName);
+        if (!parsed.cropId) {
+            this._logger.warn(`Unknown crop in sale message: ${rawItemName}`, 'Parser');
+            return null;
+        }
+
+        if (!this._cropRegistry.canSellQuality(parsed.quality)) {
+            return null;
+        }
+
+        const itemName = this._cropRegistry.getItemName(parsed.cropId, parsed.quality);
+        return { cropId: parsed.cropId, quality: parsed.quality, amount, price, itemName };
     }
 }
 

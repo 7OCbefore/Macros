@@ -14,8 +14,8 @@ class VendingState {
         this.adDelayTicks = 0;
     }
 
-    enqueueSale(crop, amount) {
-        this.queue.push({ crop, amount });
+    enqueueSale(cropId, quality, amount) {
+        this.queue.push({ cropId, quality, amount });
     }
 
     dequeueSale() {
