@@ -249,7 +249,8 @@ class JackoService {
             if (messages.length > 0) {
                 Client.waitTick(adDelayTicks);
                 const randomMessage = messages[this._getRandomNumber(0, messages.length - 1)];
-                Chat.say(randomMessage);
+                // Chat.say(randomMessage);
+                // Advertise the crop TODO
             }
 
         }

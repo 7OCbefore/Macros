@@ -172,13 +172,13 @@ Slot 56: Winged Sandals
 Slot 57: 空气
   │ (No lore)
 
-Slot 58: 空气
+Slot 58: ꢲ Banana
   │ (No lore)
 
 Slot 59: 空气
   │ (No lore)
 
-Slot 60: 空气
+Slot 60: Golden Banana
   │ (No lore)
 
 Slot 61: 空气
@@ -190,25 +190,25 @@ Slot 62: 空气
 Slot 63: 空气
   │ (No lore)
 
-Slot 64: 空气
+Slot 64: ꢲ Mango
   │ (No lore)
 
-Slot 65: 空气
+Slot 65: ꢲ Apple
   │ (No lore)
 
-Slot 66: 空气
+Slot 66: ꢲ Apple
   │ (No lore)
 
-Slot 67: 空气
+Slot 67: ꢲ Apple
   │ (No lore)
 
-Slot 68: 空气
+Slot 68: ꢲ Apple
   │ (No lore)
 
-Slot 69: 空气
+Slot 69: ꢲ Apple
   │ (No lore)
 
-Slot 70: 空气
+Slot 70: ꢲ Apple
   │ (No lore)
 
 Slot 71: ꢲ Apple
@@ -229,10 +229,10 @@ Slot 75: ꢲ Mango
 Slot 76: ꢲ Mango
   │ (No lore)
 
-Slot 77: 空气
+Slot 77: ꢲ Banana
   │ (No lore)
 
-Slot 78: 空气
+Slot 78: ꢲ Banana
   │ (No lore)
 
 Slot 79: 箭
@@ -241,22 +241,22 @@ Slot 79: 箭
 Slot 80: 熟猪排
   │ (No lore)
 
-Slot 81: 空气
+Slot 81: ꢲ Banana
   │ (No lore)
 
-Slot 82: 空气
+Slot 82: ꢲ Banana
   │ (No lore)
 
-Slot 83: 空气
+Slot 83: ꢲ Banana
   │ (No lore)
 
 Slot 84: 空气
   │ (No lore)
 
-Slot 85: 空气
+Slot 85: ꢲ Banana
   │ (No lore)
 
-Slot 86: 空气
+Slot 86: ꢲ Banana
   │ (No lore)
 
 Slot 87: ꢲ Banana
@@ -265,6 +265,6 @@ Slot 87: ꢲ Banana
 Slot 88: ꢲ Banana
   │ (No lore)
 
-Slot 89: Golden Banana
+Slot 89: ꢲ Banana
   │ (No lore)
 
