@@ -27,6 +27,7 @@ class FarmState {
         this._seedChestPos = null;
         this._startPos = null;
         this._errorCount = 0;
+        this._resumeCheckPending = false;
         this._statistics = {
             blocksProcessed: 0,
             itemsUsed: 0,
@@ -51,11 +52,24 @@ class FarmState {
 
     resume() {
         this._isPaused = false;
+        this._resumeCheckPending = true;
     }
 
     togglePause() {
+        const wasPaused = this._isPaused;
         this._isPaused = !this._isPaused;
+        if (wasPaused && !this._isPaused) {
+            this._resumeCheckPending = true;
+        }
         return this._isPaused;
+    }
+
+    consumeResumeCheck() {
+        if (!this._resumeCheckPending) {
+            return false;
+        }
+        this._resumeCheckPending = false;
+        return true;
     }
 
     startExecution(mode) {
@@ -108,6 +122,7 @@ class FarmState {
         this._phase = StatePhase.GET_POS_CHEST;
         this._mode = null;
         this._errorCount = 0;
+        this._resumeCheckPending = false;
         this._statistics = {
             blocksProcessed: 0,
             itemsUsed: 0,

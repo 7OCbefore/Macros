@@ -276,6 +276,7 @@ class FarmingExecutor {
             }
 
             this._waitIfPaused(state);
+            this._handleResumeCheck(state, chestPos, itemNames, logName);
 
             // Skip 5x5区域中心方块（灌溉方块），该方块交互不消耗物品
             const offsetX = pos.x - state.startPos.x;
@@ -337,6 +338,33 @@ class FarmingExecutor {
     _waitIfPaused(state) {
         while (state.isPaused) {
             Client.waitTick(20);
+        }
+    }
+
+    _handleResumeCheck(state, chestPos, itemNames, logName) {
+        if (!state.consumeResumeCheck()) {
+            return;
+        }
+
+        const inv = Player.openInventory();
+        const slots = this._inventoryService.findItemSlots(itemNames);
+
+        if (slots.length === 0) {
+            Chat.log('§e[Resume] Inventory empty after pause. Rechecking supplies...');
+            this._inventoryService.checkAndRefill(
+                chestPos,
+                itemNames,
+                this._movementService,
+                state,
+                logName
+            );
+            return;
+        }
+
+        const selected = inv.getSelectedHotbarSlotIndex();
+        if (!slots.includes(selected)) {
+            inv.swapHotbar(slots[0], selected);
+            Client.waitTick(2);
         }
     }
 }

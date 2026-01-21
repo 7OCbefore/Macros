@@ -95,6 +95,8 @@ class MovementService {
                     this._waitDuringPause(state);
                 }
 
+                this._ensureNoContainer();
+
                 const rotation = this._smoothLookAt(center.x, center.y, center.z);
                 const shouldJump = stuckCount > this._stuckThreshold;
                 const yawDelta = Math.abs(this._normalizeAngle(rotation.targetYaw - rotation.currentYaw));
@@ -221,6 +223,8 @@ class MovementService {
                     this._waitDuringPause(state);
                 }
 
+                this._ensureNoContainer();
+
                 const rotation = this._smoothLookAt(center.x, center.y, center.z, speedMultiplier);
                 
                 // Apply rotation without movement
@@ -335,6 +339,16 @@ class MovementService {
         while (state.isPaused) {
             Client.waitTick(20);
         }
+    }
+
+    _ensureNoContainer() {
+        if (!Hud.isContainer()) {
+            return;
+        }
+
+        const inv = Player.openInventory();
+        inv.closeAndDrop();
+        Client.waitTick(this._moveWaitTicks);
     }
 
     /**

@@ -81,7 +81,20 @@ class EventHandler {
      */
     _handlePauseKey() {
         const isPaused = this._state.togglePause();
+        if (!isPaused) {
+            this._prepareForResume();
+        }
         Chat.log(isPaused ? '§e[System] Script PAUSED' : '§a[System] Script RESUMED');
+    }
+
+    _prepareForResume() {
+        Player.clearInputs();
+
+        if (Hud.isContainer()) {
+            const inv = Player.openInventory();
+            inv.closeAndDrop();
+            Client.waitTick(this._config.timings.invCloseWaitTicks || 6);
+        }
     }
 
     /**
