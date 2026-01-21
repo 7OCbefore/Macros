@@ -1,46 +1,270 @@
-Slot 0: 空气
-Slot 1: 空气
-Slot 2: 空气
-Slot 3: 空气
-Slot 4: 空气
-Slot 5: 空气
-Slot 6: 空气
-Slot 7: 空气
-Slot 8: 空气
-Slot 9: 空气
-Slot 10: ꢲ Apple
-Slot 11: Totem of Keeping
-Slot 12: Winged Sandals
-Slot 13: 空气
-Slot 14: ꢲ Apple
-Slot 15: ꢲ Apple
-Slot 16: ꢲ Apple
-Slot 17: ꢲ Apple
-Slot 18: ꢲ Apple
-Slot 19: ꢲ Apple
-Slot 20: ꢲ Apple
-Slot 21: ꢳ Apple
-Slot 22: ꢳ Apple
+Slot 0: ꢲ Apple
+  │ (No lore)
+
+Slot 1: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 2: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 3: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 4: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 5: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 6: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 7: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 8: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 9: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 10: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 11: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 12: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 13: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 14: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 15: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 16: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 17: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 18: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 19: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 20: ꢲ Apple Basket
+  │ (No lore)
+
+Slot 21: 空气
+  │ (No lore)
+
+Slot 22: 空气
+  │ (No lore)
+
 Slot 23: 空气
+  │ (No lore)
+
 Slot 24: 空气
+  │ (No lore)
+
 Slot 25: 空气
+  │ (No lore)
+
 Slot 26: 空气
+  │ (No lore)
+
 Slot 27: 空气
+  │ (No lore)
+
 Slot 28: 空气
+  │ (No lore)
+
 Slot 29: 空气
+  │ (No lore)
+
 Slot 30: 空气
+  │ (No lore)
+
 Slot 31: 空气
+  │ (No lore)
+
 Slot 32: 空气
+  │ (No lore)
+
 Slot 33: 空气
+  │ (No lore)
+
 Slot 34: 空气
-Slot 35: 箭
-Slot 36: 熟猪排
-Slot 37: ꢲ Apple
+  │ (No lore)
+
+Slot 35: 空气
+  │ (No lore)
+
+Slot 36: 空气
+  │ (No lore)
+
+Slot 37: 空气
+  │ (No lore)
+
 Slot 38: 空气
+  │ (No lore)
+
 Slot 39: 空气
+  │ (No lore)
+
 Slot 40: 空气
+  │ (No lore)
+
 Slot 41: 空气
+  │ (No lore)
+
 Slot 42: 空气
+  │ (No lore)
+
 Slot 43: 空气
+  │ (No lore)
+
 Slot 44: 空气
+  │ (No lore)
+
 Slot 45: 空气
+  │ (No lore)
+
+Slot 46: 空气
+  │ (No lore)
+
+Slot 47: 空气
+  │ (No lore)
+
+Slot 48: 空气
+  │ (No lore)
+
+Slot 49: 空气
+  │ (No lore)
+
+Slot 50: 空气
+  │ (No lore)
+
+Slot 51: 空气
+  │ (No lore)
+
+Slot 52: 空气
+  │ (No lore)
+
+Slot 53: 空气
+  │ (No lore)
+
+Slot 54: 空气
+  │ (No lore)
+
+Slot 55: Totem of Keeping
+  │ (No lore)
+
+Slot 56: Winged Sandals
+  │ (No lore)
+
+Slot 57: 空气
+  │ (No lore)
+
+Slot 58: 空气
+  │ (No lore)
+
+Slot 59: 空气
+  │ (No lore)
+
+Slot 60: 空气
+  │ (No lore)
+
+Slot 61: 空气
+  │ (No lore)
+
+Slot 62: 空气
+  │ (No lore)
+
+Slot 63: 空气
+  │ (No lore)
+
+Slot 64: 空气
+  │ (No lore)
+
+Slot 65: 空气
+  │ (No lore)
+
+Slot 66: 空气
+  │ (No lore)
+
+Slot 67: 空气
+  │ (No lore)
+
+Slot 68: 空气
+  │ (No lore)
+
+Slot 69: 空气
+  │ (No lore)
+
+Slot 70: 空气
+  │ (No lore)
+
+Slot 71: 空气
+  │ (No lore)
+
+Slot 72: 空气
+  │ (No lore)
+
+Slot 73: 空气
+  │ (No lore)
+
+Slot 74: 空气
+  │ (No lore)
+
+Slot 75: 空气
+  │ (No lore)
+
+Slot 76: 空气
+  │ (No lore)
+
+Slot 77: 空气
+  │ (No lore)
+
+Slot 78: 空气
+  │ (No lore)
+
+Slot 79: 箭
+  │ (No lore)
+
+Slot 80: 熟猪排
+  │ (No lore)
+
+Slot 81: 空气
+  │ (No lore)
+
+Slot 82: 空气
+  │ (No lore)
+
+Slot 83: 空气
+  │ (No lore)
+
+Slot 84: 空气
+  │ (No lore)
+
+Slot 85: 空气
+  │ (No lore)
+
+Slot 86: 空气
+  │ (No lore)
+
+Slot 87: 空气
+  │ (No lore)
+
+Slot 88: 空气
+  │ (No lore)
+
+Slot 89: 空气
+  │ (No lore)
+
