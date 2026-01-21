@@ -105,9 +105,24 @@ const end = [276, 56, 329];
 再提醒一些重点：
 - 脚本中所有物品的信息都必须使用物品name，千万不能使用原生的物品id，类似"minecraft:apple"这样的
 - 补货只使用star3的篮子
-
 1星/2星 作物不允许上架和出售，后续的扩展中可能会用到，但目前暂时只有区分作物品级的作用
 
+### 测试问题
+1. 测试过程中，对Jacko进行售卖作物时，golden 品质的作物没有正确出售
+2. 当有玩家通过AH购买作物时，虽然有log信息，但是没有进行补货操作
+lilster03 bought your 64x ꢲ Apple for 800 rubies!
+[Vending][Auction][INFO] Default price set to 800.
+[Vending][Queue][INFO] Queued sale: 64x Apple (star3).
+[Vending][Auction][INFO] Listed 64x ꢲ Apple from slot 21 at 800.
+
+如果是一群来自Apple的顶级工程师会如何分析问题并给出解决方案？
+
+可以确定的一点是作物前缀不可叠加，不可能出现类似"Golden ꢲ Apple"这样的作物name
+用户认为可以对golden作物的售卖使用一个很简单的逻辑，无论角色的背包中是否有golden作物，都对jacko中的golden槽位进行quick()操作，即售卖操作
+
 ## rerequirement-7
-种植时，补货完成后暂停运行，然后手动清空背包，此时继续运行会导致脚本执行出现问题，角色会朝着目标方块一直移动加跳跃，而不执行正确的种植等操作。log信息为：
-[Movement] Stuck at Point3D(208, 56, 393). Attempting jump... (x3)
+种植前置 购买 soil,fertilizer,seeds
+购买soil或fertilizer的操作逻辑：
+1. 传送到yellow balloon
+2. 走向[-79,69,-133]→走向[-80,71,-141]并与在该坐标站着的Jeckyl交互两次（交互逻辑与Jacko一样）
+3. 

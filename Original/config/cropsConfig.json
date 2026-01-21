@@ -27,7 +27,7 @@
         },
         "jackoPrice": {
           "star3": 17,
-          "golden": 255
+          "golden": null
         }
       }
     },
@@ -43,7 +43,7 @@
         },
         "jackoPrice": {
           "star3": 17,
-          "golden": 255
+          "golden": null
         }
       }
     },
@@ -59,7 +59,7 @@
         },
         "jackoPrice": {
           "star3": 17,
-          "golden": 255
+          "golden": null
         }
       }
     }

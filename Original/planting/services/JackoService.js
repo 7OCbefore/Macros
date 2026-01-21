@@ -46,10 +46,15 @@ class JackoService {
             this._state.isJackoMode = true;
 
             const requiredAmount = 64 * 3;
+            const hasSellableItems = this._hasSellableItems();
             if (!this._checkCropQuantities(requiredAmount)) {
-                if (!this._replenishCropBaskets(requiredAmount)) {
-                    this._returnToBase();
-                    return false;
+                if (!hasSellableItems) {
+                    if (!this._replenishCropBaskets(requiredAmount)) {
+                        this._returnToBase();
+                        return false;
+                    }
+                } else {
+                    this._logger.info('Proceeding with available sellable items.', 'Jacko');
                 }
             }
 
@@ -100,6 +105,26 @@ class JackoService {
 
         this._logger.info('All crop quantities are sufficient.', 'Jacko');
         return true;
+    }
+
+    _hasSellableItems() {
+        const inventory = Player.openInventory();
+        const totalSlots = inventory.getTotalSlots();
+
+        for (let i = 0; i < totalSlots; i++) {
+            const item = inventory.getSlot(i);
+            if (!item) {
+                continue;
+            }
+
+            const displayName = item.getName().getString();
+            const parsed = this._cropRegistry.parseItemName(displayName);
+            if (parsed.cropId && this._cropRegistry.canSellQuality(parsed.quality)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     _replenishCropBaskets(requiredAmount) {
