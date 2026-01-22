@@ -178,3 +178,12 @@ tips：
 由于该服务器中很多物品是服务器管理员自定义的，这就导致了这些自定义的物品的name不同，但id完全相同，所以要区分这些物品必须使用物品的name，不能使用物品的id。
 
 检查存放种植物品的箱子中物品是否充足时需要检查两个箱子，即dump和supply箱子都应该检查并确认是否充足，并在不充足时进行购买补充
+
+测试中没有与Jeckyl正确交互打开购买界面，用户观察到两个问题
+1. 移动结束时距离npc较远，无法与npc交互
+2. 与npc交互操作时，瞄准的时npc边缘，这会导致第二次与npc交互失败。必须完全按照Original\planting\services\JackoService.js中与npc交互的逻辑进行操作
+
+//TODO
+测试发现 已经成功与Jeckly交互两次并打开了购买界面，但是对soil进行了一次购买操作就报出失败信息并停止了操作：
+[Supply] Failed to purchase soil.
+[Supply] Pre-check failed.

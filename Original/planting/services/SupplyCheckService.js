@@ -228,11 +228,11 @@ class SupplyCheckService {
         this._teleport(npcConfig.teleportCommand);
 
         if (npcConfig.pos1) {
-            this._movementService.moveTo(Point3D.from(npcConfig.pos1), state);
+            this._moveToNpcBlock(npcConfig.pos1, npcConfig.distanceThreshold);
             Client.waitTick(4);
         }
         if (npcConfig.pos2) {
-            this._movementService.moveTo(Point3D.from(npcConfig.pos2), state);
+            this._moveToNpcBlock(npcConfig.pos2, npcConfig.distanceThreshold);
             Client.waitTick(4);
         }
 
@@ -288,6 +288,32 @@ class SupplyCheckService {
         }
         const center = target.toCenter();
         player.lookAt(center.x, center.y, center.z);
+    }
+
+    _moveToNpcBlock(pos, distanceThreshold) {
+        const threshold = distanceThreshold || this._config.thresholds?.jackoDistance || 2;
+        const target = Point3D.from(pos).toCenter();
+        const player = Player.getPlayer();
+        const timeout = this._timings.moveTimeout || 500;
+        const moveTick = this._timings.moveTick || 1;
+        let ticks = 0;
+
+        player.lookAt(target.x, target.y, target.z);
+
+        while (player.distanceTo(target.x, target.y, target.z) > threshold) {
+            if (ticks >= timeout) {
+                break;
+            }
+
+            player.lookAt(target.x, target.y, target.z);
+            KeyBind.keyBind('key.forward', true);
+            KeyBind.keyBind('key.sprint', true);
+            Client.waitTick(moveTick);
+            ticks += moveTick;
+        }
+
+        KeyBind.keyBind('key.forward', false);
+        KeyBind.keyBind('key.sprint', false);
     }
 
     _getChestStatus(chestPos, itemNames, state) {
