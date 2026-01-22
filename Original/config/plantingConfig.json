@@ -3,6 +3,9 @@
     "cropEnd": [276, 56, 329],
     "defaultStart": [220, 56, 330]
   },
+  "scriptConfig": {
+    "activeCrop": null
+  },
   "chests": {
     "soil": {
       "supply": [220, 55, 397],
@@ -18,6 +21,36 @@
     },
     "water": {
       "supply": [207, 56, 397]
+    }
+  },
+  "seedsByCrop": {
+    "apple": {
+      "supply": [216, 54, 396],
+      "dump": [216, 58, 398]
+    },
+    "mango": {
+      "supply": [215, 54, 396],
+      "dump": [215, 58, 398]
+    },
+      "banana": {
+        "supply": [214, 54, 396],
+        "dump": [214, 58, 398]
+      }
+    },
+  "purchase": {
+    "maxTrips": 3,
+    "jeckyl": {
+      "teleportCommand": "/balloon yellow-balloon",
+      "pos1": [-79, 69, -133],
+      "pos2": [-80, 71, -141],
+      "interactPos": [-80, 71, -141]
+    },
+    "seedShop": {
+      "teleportCommand": "/balloon yellow-balloon",
+      "pos1": [-54, 69, -119],
+      "pos2": [-57, 71, -115],
+      "interactPos": [-57, 71, -115],
+      "nextPageName": "Next Page"
     }
   },
   "items": {
@@ -52,6 +85,10 @@
     "moveWaitTicks": 1,
     "refillWaitTicks": 16,
     "fertilizeWaitTicks": 1,
+
+    "teleportWait": 134,
+    "npcInteractWait": 14,
+    "npcSecondInteractWait": 14,
 
     "lookSmoothSpeed": 0.2,
     "lookSmoothSpeedMin": 0.12,

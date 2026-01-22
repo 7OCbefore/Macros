@@ -79,11 +79,15 @@ class FarmingExecutor {
                 return;
             }
             chestPos = state.seedChestPos;
-            dumpPos = new Point3D(
-                chestPos.x,
-                chestPos.y + 4,
-                chestPos.z + 2
-            );
+            if (state.seedDumpPos) {
+                dumpPos = state.seedDumpPos;
+            } else {
+                dumpPos = new Point3D(
+                    chestPos.x,
+                    chestPos.y + 4,
+                    chestPos.z + 2
+                );
+            }
         }
 
 

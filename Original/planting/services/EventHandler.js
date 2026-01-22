@@ -8,10 +8,11 @@ const Point3D = require('../core/Point3D.js');
 const { StatePhase, OperationMode } = require('../core/FarmState.js');
 
 class EventHandler {
-    constructor(config, state, farmingExecutor) {
+    constructor(config, state, farmingExecutor, supplyCheckService) {
         this._config = config;
         this._state = state;
         this._executor = farmingExecutor;
+        this._supplyCheck = supplyCheckService;
         
         this._keys = config.keybindings;
         this._listener = null;
@@ -102,7 +103,7 @@ class EventHandler {
      * @private
      */
     _handleLeftClick(event, ctx) {
-        const phase = this._state.phase;
+        let phase = this._state.phase;
         
         if (phase !== StatePhase.GET_POS_CHEST && phase !== StatePhase.GET_POS_START) {
             return;
@@ -117,11 +118,14 @@ class EventHandler {
         const pos = Point3D.fromBlock(target);
 
         if (phase === StatePhase.GET_POS_CHEST) {
-            this._state.setSeedChestPos(pos);
+            if (!this._setSeedChestByConfig(pos)) {
+                Chat.log('§cSeed chest not matched in seedsByCrop config.');
+                return;
+            }
             this._state.setPhase(StatePhase.GET_POS_START);
             
             Chat.log(Chat.createTextBuilder()
-                .append(`Seed_chest position set to: (${pos.x}, ${pos.y}, ${pos.z})`)
+                .append(`Seed chest set to: (${pos.x}, ${pos.y}, ${pos.z})`)
                 .withColor(0x2)
                 .build());
             Chat.log(Chat.createTextBuilder()
@@ -142,6 +146,42 @@ class EventHandler {
                 .withColor(0x2)
                 .build());
         }
+    }
+
+    _setSeedChestByConfig(pos) {
+        const seedsByCrop = this._config.seedsByCrop || {};
+        const matched = this._findCropBySeedChest(pos, seedsByCrop);
+        if (!matched) {
+            return false;
+        }
+
+        this._state.setActiveCrop(matched.cropId);
+        this._state.setSeedChestPos(Point3D.from(matched.supply));
+        if (matched.dump) {
+            this._state.setSeedDumpPos(Point3D.from(matched.dump));
+        }
+        Chat.log(`§a[Seed] Selected crop: ${matched.cropId}`);
+        return true;
+    }
+
+    _findCropBySeedChest(pos, seedsByCrop) {
+        for (const cropId of Object.keys(seedsByCrop)) {
+            const entry = seedsByCrop[cropId];
+            if (!entry?.supply) {
+                continue;
+            }
+            if (this._isSamePos(pos, entry.supply)) {
+                return { cropId, supply: entry.supply, dump: entry.dump || null };
+            }
+        }
+        return null;
+    }
+
+    _isSamePos(point, arrayPos) {
+        if (!arrayPos || arrayPos.length < 3) {
+            return false;
+        }
+        return point.x === arrayPos[0] && point.y === arrayPos[1] && point.z === arrayPos[2];
     }
 
 
@@ -171,6 +211,10 @@ class EventHandler {
 
         if (mode) {
             this._state.resetErrors();
+            if (this._supplyCheck && !this._supplyCheck.ensureSuppliesReady(this._state)) {
+                Chat.log('§c[Supply] Pre-check failed.');
+                return;
+            }
             this._executor.execute(this._state, mode);
             
             // Auto-chain Water after Plant if successful

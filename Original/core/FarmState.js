@@ -25,6 +25,8 @@ class FarmState {
         this._phase = StatePhase.GET_POS_CHEST;
         this._mode = null;
         this._seedChestPos = null;
+        this._seedDumpPos = null;
+        this._activeCrop = null;
         this._startPos = null;
         this._errorCount = 0;
         this._resumeCheckPending = false;
@@ -42,6 +44,8 @@ class FarmState {
     get phase() { return this._phase; }
     get mode() { return this._mode; }
     get seedChestPos() { return this._seedChestPos; }
+    get seedDumpPos() { return this._seedDumpPos; }
+    get activeCrop() { return this._activeCrop; }
     get startPos() { return this._startPos; }
     get errorCount() { return this._errorCount; }
     get statistics() { return { ...this._statistics }; }
@@ -98,6 +102,14 @@ class FarmState {
         this._seedChestPos = pos;
     }
 
+    setSeedDumpPos(pos) {
+        this._seedDumpPos = pos;
+    }
+
+    setActiveCrop(cropId) {
+        this._activeCrop = cropId;
+    }
+
     setStartPos(pos) {
         this._startPos = pos;
     }
@@ -122,6 +134,8 @@ class FarmState {
         this._phase = StatePhase.GET_POS_CHEST;
         this._mode = null;
         this._errorCount = 0;
+        this._seedDumpPos = null;
+        this._activeCrop = null;
         this._resumeCheckPending = false;
         this._statistics = {
             blocksProcessed: 0,

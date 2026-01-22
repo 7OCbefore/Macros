@@ -22,6 +22,7 @@ const PlayerService = require('../services/PlayerService.js');
 const FarmingExecutor = require('../services/FarmingExecutor.js');
 const EventHandler = require('../services/EventHandler.js');
 const CropRegistry = require('../services/CropRegistry.js');
+const SupplyCheckService = require('../services/SupplyCheckService.js');
 
 /**
  * Main application class
@@ -113,6 +114,21 @@ class PlantingApplication {
      */
     _initializeState() {
         this._state = new FarmState();
+        this._applySeedConfig();
+    }
+
+    _applySeedConfig() {
+        const cropId = this._config?.scriptConfig?.activeCrop;
+        const seedsByCrop = this._config?.seedsByCrop || {};
+        const seedConfig = seedsByCrop[cropId];
+        if (cropId && seedConfig?.supply) {
+            this._state.setActiveCrop(cropId);
+            this._state.setSeedChestPos(Point3D.from(seedConfig.supply));
+            if (seedConfig.dump) {
+                this._state.setSeedDumpPos(Point3D.from(seedConfig.dump));
+            }
+            this._state.setPhase(StatePhase.GET_POS_START);
+        }
     }
 
     /**
@@ -129,6 +145,12 @@ class PlantingApplication {
             this._services.inventory,
             this._services.player
         );
+        this._services.supplyCheck = new SupplyCheckService(
+            this._config,
+            this._cropRegistry,
+            this._services.movement,
+            this._services.inventory
+        );
     }
 
     /**
@@ -141,7 +163,8 @@ class PlantingApplication {
         this._eventHandler = new EventHandler(
             this._config,
             this._state,
-            this._services.executor
+            this._services.executor,
+            this._services.supplyCheck
         );
         
         this._eventHandler.register();
@@ -152,8 +175,21 @@ class PlantingApplication {
      * @private
      */
     _displayWelcomeMessage() {
+        const cropId = this._config?.scriptConfig?.activeCrop;
+        const seedConfig = this._config?.seedsByCrop?.[cropId];
+        if (cropId && seedConfig?.supply) {
+            Chat.log(Chat.createTextBuilder()
+                .append(`Seed chest set for crop: ${cropId}`)
+                .withColor(0x2)
+                .build());
+            Chat.log(Chat.createTextBuilder()
+                .append("Click on the block as the starting point")
+                .withColor(0x2)
+                .build());
+            return;
+        }
         Chat.log(Chat.createTextBuilder()
-            .append("Click on the first block to set seed_chest position")
+            .append("Click on the seed chest to select crop")
             .withColor(0x2)
             .build());
     }

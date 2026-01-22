@@ -65,6 +65,14 @@ class CropRegistry {
         return seeds;
     }
 
+    getSeedItemsByCrop(cropId) {
+        const crop = this._crops[cropId];
+        if (!crop?.seedItems) {
+            return [];
+        }
+        return crop.seedItems.filter((seed) => Boolean(seed));
+    }
+
     getCropIds() {
         return Object.keys(this._crops);
     }
