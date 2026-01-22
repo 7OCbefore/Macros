@@ -188,7 +188,7 @@ class JackoService {
         this._lookAtBlockCenter(player, interactPos);
         Player.getInteractionManager().interact();
         Client.waitTick(this._config.timings.jackoSecondInteractWait);
-
+ 
         if (!Hud.isContainer()) {
             this._logger.warn('Jacko container not found.', 'Jacko');
             return false;

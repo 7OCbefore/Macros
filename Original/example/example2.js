@@ -1,236 +1,374 @@
+// 转载自jsm discord 
+// 原帖: https://discord.com/channels/732004268948586545/1235657651409649734
+// 作者: Funzen
+// 原帖下的演示视频: https://discord.com/channels/732004268948586545/1235657651409649734/1235657651409649734
+
+
+//将寻路方式改为baritone by 无处可去的愚者
+const player = Player.getPlayer();
+const RegistryHelper = Java.type("xyz.wagyourtail.jsmacros.client.api.classes.RegistryHelper");
+const items_raw = new RegistryHelper().getItems();
+const items = [];
+const BaritoneAPI = Java.type("baritone.api.BaritoneAPI");
+const GoalBlock = Java.type("baritone.api.pathing.goals.GoalBlock");
+    const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+    let goalProcess = baritone.getCustomGoalProcess();
+
+for (let item of items_raw) {
+    items.push([item.getId().split(":")[1], item.getName().toLowerCase()]);
+}
+
+// if script is running
+if (GlobalVars.getBoolean("storage_sorter_running")) {
+    // if script is enabled disable it and sho a message
+    if (GlobalVars.getBoolean("storage_sorter_toggle")) {
+        Chat.log(Chat.createTextBuilder().append("Storage Sorter ").withColor(255, 255, 255)
+            .append("Disabled").withColor(192, 0, 0));
+        GlobalVars.putBoolean("storage_sorter_toggle", false);
+        baritone.getPathingBehavior().cancelEverything()
+    }
+} else {  // if script is not running, run it
+    GlobalVars.putBoolean("storage_sorter_toggle", true);
+    GlobalVars.putBoolean("storage_sorter_running", true);
+    Chat.log(Chat.createTextBuilder().append("Storage Sorter ").withColor(255, 255, 255)
+        .append("Enabled").withColor(0, 192, 0));
+    sort();
+}
+
 /**
- * @file test_PlantingV3.js
- * @description Unit tests for refactored planting script v3.0.0
- * @version 3.0.0
+ * Check if storage sorter is disabled
+ * @returns {boolean} true if storage sorter is disabled
  */
+function stop() {
+    return !GlobalVars.getBoolean("storage_sorter_toggle");
+}
 
-const Point3D = require('../core/Point3D.js');
-const { FarmState, StatePhase, OperationMode } = require('../core/FarmState.js');
-const FarmIterator = require('../core/FarmIterator.js');
+/**
+ * Smoothly rotates the player's head to the specified coordinates.
+ *
+ * @param {number} x - The x-coordinate of the target position.
+ * @param {number} y - The y
+ * @param {number} z - The z
+ * @param {number} [speed=2] - The speed at which the player's head rotates.
+ */
+function smooth_look(x, y, z, speed = 2) {
+    const player_pos = player.getEyePos();
 
-const TestRunner = {
-    passed: 0,
-    failed: 0,
-    tests: [],
+    // Calculate the yaw and pitch rotations
+    let yaw = -Math.atan2(x + 0.5 - player_pos.x, z + 0.5 - player_pos.z) * 180 / Math.PI;
+    const pitch = -Math.atan2(y + 0.5 - player_pos.y,
+        Math.sqrt((x + 0.5 - player_pos.x) ** 2 + (z + 0.5 - player_pos.z) ** 2)) * 180 / Math.PI;
 
-    /**
-     * Assert equality
-     */
-    assertEquals(actual, expected, message) {
-        if (actual === expected) {
-            this.passed++;
-            Chat.log(`§a✓ ${message}`);
-        } else {
-            this.failed++;
-            Chat.log(`§c✗ ${message}`);
-            Chat.log(`  Expected: ${expected}, Got: ${actual}`);
-        }
-    },
+    // Player's current yaw and pitch
+    let old_yaw = Player.getPlayer().getYaw();
+    const old_pitch = Player.getPlayer().getPitch();
 
-    /**
-     * Assert truthy
-     */
-    assertTrue(condition, message) {
-        this.assertEquals(!!condition, true, message);
-    },
+    let mid_yaw;
+    let mid_pitch;
 
-    /**
-     * Assert falsy
-     */
-    assertFalse(condition, message) {
-        this.assertEquals(!!condition, false, message);
-    },
+    // yaw and old_yaw correction
+    if (yaw < old_yaw) yaw += 360;
+    if (yaw - old_yaw > 180) old_yaw += 360;
 
-    /**
-     * Run test function
-     */
-    test(name, fn) {
-        Chat.log(`\n§e[Test] ${name}`);
-        try {
-            fn();
-        } catch (error) {
-            this.failed++;
-            Chat.log(`§c✗ Exception: ${error.message}`);
-        }
-    },
+    const dominant = (Math.max(Math.abs(old_yaw - yaw), Math.abs(old_pitch - pitch)));
+    const steps = Math.floor(dominant / speed);  // number of steps needed
 
-    /**
-     * Print summary
-     */
-    summary() {
-        Chat.log('\n§e═══════════════════════════════════════');
-        Chat.log(`§aTests Passed: ${this.passed}`);
-        Chat.log(`§cTests Failed: ${this.failed}`);
-        Chat.log(`§bTotal: ${this.passed + this.failed}`);
-        Chat.log('§e═══════════════════════════════════════');
+    // smoothly rotate the player with a small delay in between
+    for (var i = 0; i < steps; i++) {
+        mid_yaw = old_yaw + (yaw - old_yaw) / steps * (i + 1);
+        mid_pitch = old_pitch + (pitch - old_pitch) / steps * (i + 1);
+        player.lookAt(mid_yaw, mid_pitch);
+        Time.sleep(10);
     }
-};
+}
 
-Chat.log('§e═══════════════════════════════════════');
-Chat.log('§aPlanting Script v3.0.0 - Unit Tests');
-Chat.log('§e═══════════════════════════════════════');
+/**
+ * return an array of x, y, z from a Pos3D object
+ * @param {Pos3D} pos 
+ * @returns {number[]}
+ */
+function pos3d_to_array(pos) {
+    return [pos.x, pos.y, pos.z];
+}
 
-TestRunner.test('Point3D: Construction', () => {
-    const p = new Point3D(10.7, 20.3, 30.9);
-    TestRunner.assertEquals(p.x, 10, 'X coordinate should be floored');
-    TestRunner.assertEquals(p.y, 20, 'Y coordinate should be floored');
-    TestRunner.assertEquals(p.z, 30, 'Z coordinate should be floored');
-});
+/**
+ * finds all signs in 3 chunk radius around the player that contains the given text
+ * @param {string} text 
+ * @returns {Pos3D[]} a list of all signs that have the text
+ */
+function find_sign(text) {
+    // world scanner for wall signs and scanning 3 chunk radius around the player
+    const scanner = World.getWorldScanner().withStringBlockFilter().contains("wall_sign").build();
+    const signs = scanner.scanAroundPlayer(3);
 
-TestRunner.test('Point3D: fromArray', () => {
-    const p = Point3D.from([5, 10, 15]);
-    TestRunner.assertTrue(p instanceof Point3D, 'Should create Point3D instance');
-    TestRunner.assertEquals(p.x, 5, 'X should be 5');
-    
-    const invalid = Point3D.from(null);
-    TestRunner.assertEquals(invalid, null, 'Should return null for invalid input');
-});
+    /** @type {Pos3D[]} */
+    const matches = [];
 
-TestRunner.test('Point3D: toArray', () => {
-    const p = new Point3D(1, 2, 3);
-    const arr = p.toArray();
-    TestRunner.assertEquals(arr[0], 1, 'Array[0] should be X');
-    TestRunner.assertEquals(arr[1], 2, 'Array[1] should be Y');
-    TestRunner.assertEquals(arr[2], 3, 'Array[2] should be Z');
-});
-
-TestRunner.test('Point3D: toCenter', () => {
-    const p = new Point3D(10, 20, 30);
-    const center = p.toCenter();
-    TestRunner.assertEquals(center.x, 10.5, 'Center X should be +0.5');
-    TestRunner.assertEquals(center.y, 20.5, 'Center Y should be +0.5');
-    TestRunner.assertEquals(center.z, 30.5, 'Center Z should be +0.5');
-});
-
-TestRunner.test('Point3D: distanceTo', () => {
-    const p1 = new Point3D(0, 0, 0);
-    const p2 = new Point3D(3, 4, 0);
-    const dist = p1.distanceTo(p2);
-    TestRunner.assertEquals(dist, 5, 'Distance should be 5 (3-4-5 triangle)');
-});
-
-TestRunner.test('Point3D: manhattanDistanceTo', () => {
-    const p1 = new Point3D(0, 0, 0);
-    const p2 = new Point3D(3, 4, 5);
-    const dist = p1.manhattanDistanceTo(p2);
-    TestRunner.assertEquals(dist, 12, 'Manhattan distance should be 12');
-});
-
-TestRunner.test('Point3D: equals', () => {
-    const p1 = new Point3D(10, 20, 30);
-    const p2 = new Point3D(10, 20, 30);
-    const p3 = new Point3D(10, 20, 31);
-    
-    TestRunner.assertTrue(p1.equals(p2), 'Same coordinates should be equal');
-    TestRunner.assertFalse(p1.equals(p3), 'Different coordinates should not be equal');
-});
-
-TestRunner.test('Point3D: offset', () => {
-    const p1 = new Point3D(10, 20, 30);
-    const p2 = p1.offset(1, 2, 3);
-    
-    TestRunner.assertEquals(p2.x, 11, 'Offset X should be 11');
-    TestRunner.assertEquals(p2.y, 22, 'Offset Y should be 22');
-    TestRunner.assertEquals(p2.z, 33, 'Offset Z should be 33');
-});
-
-TestRunner.test('FarmState: Initial state', () => {
-    const state = new FarmState();
-    TestRunner.assertFalse(state.isPaused, 'Should not be paused initially');
-    TestRunner.assertFalse(state.isRunning, 'Should not be running initially');
-    TestRunner.assertEquals(state.phase, StatePhase.GET_POS_CHEST, 'Initial phase should be GET_POS_CHEST');
-});
-
-TestRunner.test('FarmState: Pause/Resume', () => {
-    const state = new FarmState();
-    state.pause();
-    TestRunner.assertTrue(state.isPaused, 'Should be paused');
-    
-    state.resume();
-    TestRunner.assertFalse(state.isPaused, 'Should be resumed');
-    
-    const isPaused = state.togglePause();
-    TestRunner.assertTrue(isPaused, 'Toggle should pause');
-});
-
-TestRunner.test('FarmState: Execution lifecycle', () => {
-    const state = new FarmState();
-    
-    state.startExecution(OperationMode.SOIL);
-    TestRunner.assertTrue(state.isRunning, 'Should be running after start');
-    TestRunner.assertEquals(state.mode, OperationMode.SOIL, 'Mode should be SOIL');
-    TestRunner.assertEquals(state.phase, StatePhase.EXECUTING, 'Phase should be EXECUTING');
-    
-    state.stopExecution();
-    TestRunner.assertFalse(state.isRunning, 'Should stop running');
-});
-
-TestRunner.test('FarmState: Statistics', () => {
-    const state = new FarmState();
-    
-    state.incrementStat('blocksProcessed', 10);
-    state.incrementStat('itemsUsed', 5);
-    
-    const stats = state.statistics;
-    TestRunner.assertEquals(stats.blocksProcessed, 10, 'Blocks processed should be 10');
-    TestRunner.assertEquals(stats.itemsUsed, 5, 'Items used should be 5');
-});
-
-TestRunner.test('FarmIterator: Basic iteration', () => {
-    const start = new Point3D(0, 0, 0);
-    const end = new Point3D(2, 0, 2);
-    const iterator = new FarmIterator(start, end, 1);
-    
-    const points = iterator.toArray();
-    
-    TestRunner.assertEquals(points.length, 9, 'Should have 9 points (3x3 grid)');
-    TestRunner.assertTrue(points[0] instanceof Point3D, 'Should yield Point3D instances');
-});
-
-TestRunner.test('FarmIterator: Total blocks calculation', () => {
-    const start = new Point3D(0, 0, 0);
-    const end = new Point3D(9, 0, 9);
-    const iterator = new FarmIterator(start, end, 5);
-    
-    TestRunner.assertEquals(iterator.getTotalBlocks(), 100, 'Should calculate 100 blocks (10x10)');
-});
-
-TestRunner.test('FarmIterator: Negative coordinates', () => {
-    const start = new Point3D(-5, 0, -5);
-    const end = new Point3D(-1, 0, -1);
-    const iterator = new FarmIterator(start, end, 2);
-    
-    const points = iterator.toArray();
-    TestRunner.assertEquals(points.length, 25, 'Should handle negative coordinates (5x5 = 25)');
-});
-
-TestRunner.test('FarmIterator: Single block', () => {
-    const start = new Point3D(10, 20, 30);
-    const end = new Point3D(10, 20, 30);
-    const iterator = new FarmIterator(start, end, 1);
-    
-    const points = iterator.toArray();
-    TestRunner.assertEquals(points.length, 1, 'Single block should yield 1 point');
-    TestRunner.assertTrue(points[0].equals(start), 'Should be the start point');
-});
-
-TestRunner.test('StatePhase: Enum immutability', () => {
-    const original = StatePhase.GET_POS_CHEST;
-    
-    try {
-        StatePhase.GET_POS_CHEST = 'MODIFIED';
-    } catch (e) {
+    // loop through each signs found
+    for (const sign of signs) {
+        // get the front text of each sign
+        let linesNBT = World.getBlock(sign).getNBT().resolve("front_text.messages").at(0).asListHelper();
+        for (let i = 0; i < linesNBT.length(); i++) {
+            let line = linesNBT.get(i).asString().replaceAll("\"", "").toLowerCase();
+            // check if sign includes the given text
+            if (line.includes(text.toLowerCase())) {
+                matches.push(sign);
+            }
+        }
     }
-    
-    TestRunner.assertEquals(StatePhase.GET_POS_CHEST, original, 'Enum should be immutable (frozen)');
-});
 
-TestRunner.test('OperationMode: Enum values', () => {
-    TestRunner.assertEquals(OperationMode.SOIL, 'SOIL', 'SOIL mode should exist');
-    TestRunner.assertEquals(OperationMode.FERTILIZE, 'FERTILIZE', 'FERTILIZE mode should exist');
-    TestRunner.assertEquals(OperationMode.PLANT, 'PLANT', 'PLANT mode should exist');
-});
+    return matches;
+}
 
-TestRunner.summary();
+/**
+ * Finds storage locations for items based on wall signs found within a 3 chunk radius of the player.
+ *
+ * @return {Record<String, Pos3D[]>} A record of item IDs as keys and arrays of Pos3D objects as values,
+ * representing the storage locations for each item.
+ */
+function find_items_storage() {
+    // world scanner for wall signs and scanning 3 chunk radius around the player
+    const scanner = World.getWorldScanner().withStringBlockFilter().contains("wall_sign").build();
+    const signs = scanner.scanAroundPlayer(3);
 
-Chat.log('\n§a[Tests Complete] All core functionality validated');
+    /** @type {Record<String,Pos3D>} */
+    const storages = {};
+
+    // loop through each signs found
+    for (const sign of signs) {
+        let linesNBT = World.getBlock(sign).getNBT().resolve("front_text.messages").at(0).asListHelper();
+        for (let i = 0; i < linesNBT.length(); i++) {
+            let line = linesNBT.get(i).asString().replaceAll("\"", "").toLowerCase();
+            let item_id;
+            if (items.some(e => {
+                if (e.includes(line)) {
+                    item_id = e[0];
+                    return true;
+                }
+                return false;
+            })) {
+                if (Object.hasOwn(storages, item_id)) {
+                    storages[item_id].push(sign_to_chest(sign));
+                } else {
+                    storages[item_id] = [sign_to_chest(sign)];
+                }
+            }
+        }
+    }
+    return storages;
+}
+
+/**
+ * simply walk to coords provided by pos in a straight line
+ * returns true if walked
+ * @param {Pos3D} pos  the position to move to
+ * @returns {boolean} true if player moved
+ */
+function move_to(pos) {
+    // if player is close enough, no need to move
+    if (player.distanceTo(pos) > 4) {
+        // create a player input (forward, sideways, yaw, pitch, jump, sneak, sprint)
+        if(!goalProcess.isActive())goto(pos.x,pos.z);
+
+        // move the player until close enough
+        while (player.distanceTo(pos) > 4) {
+            if (stop()) return;
+            Client.waitTick();
+        }
+        return true;
+    }
+    return false;
+}
+function goto(x,z) { 
+let goal = null; 
+goal = new GoalBlock(x,Math.floor(player.getPos().getY()),z); 
+goalProcess.setGoalAndPath(goal); 
+while (goalProcess.isActive() && GlobalVars.getBoolean("storage_sorter_running")) {
+     Time.sleep(50); 
+    } 
+}
+/**
+ * walk to and open the chest at given position
+ * @param {Pos3D} chest the position of the chest
+ */
+function open_chest(chest) {
+    if (stop()) return;
+
+    // turn toward the chest an move to
+    smooth_look(...pos3d_to_array(chest));
+    Client.waitTick();
+    if (move_to(chest)) smooth_look(...pos3d_to_array(chest));
+    if (stop()) return;
+
+    // interact with the chest
+    Player.getInteractionManager().interactBlock(chest.x, chest.y, chest.z, player.getFacingDirection().getName(), false);
+}
+
+/**
+* get the position of a chest that the given sign is attached to
+* @param {Pos3D} sign position of the sign
+* @returns {Pos3D} position of the chest that sign is attached to
+*/
+function sign_to_chest(sign) {
+    const face_map = {
+        "north": [0, 0, 1],  // facing: [dx, dy, dz]
+        "south": [0, 0, -1],
+        "west": [1, 0, 0],
+        "east": [-1, 0, 0]
+    };
+    return sign.add(...face_map[World.getBlock(sign).getBlockState().get("facing")]);
+}
+
+/**
+ * Finds the slot index of items that are in player's main/hotbar inventory
+ * @param {CanOmitNamespace<ItemId>} item the item to search for
+ * @returns {number[]} found item slots
+ */
+function find_item_in_player(item, inv) {
+    Client.waitTick();
+    const result = [];
+
+    // add minecraft namespace to the item
+    if (!item.startsWith("minecraft:")) {
+        item = "minecraft:" + item;
+    }
+
+    // loop through the inventory
+    const first_slot = inv.getMap().main.at(0);
+    for (let i = first_slot; i < first_slot + 36; i++) {
+        if (inv.getSlot(i).getItemId() == item) {
+            result.push(i);
+        }
+    }
+    return result;
+}
+
+/**
+ * Check if inventory is empty of interesting items
+ * @param {Inventory<*>} inv 
+ * @param {Record<String, Pos3D[]>} item_chests 
+ * @returns 
+ */
+function is_container_empty(inv, item_chests) {
+    for (const i of inv.getMap().container) {
+        if (Object.keys(item_chests).includes(inv.getSlot(i).getItemId().split(":")[1])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Check if inventory has no empty slot
+ * @param {Inventory<*>} inv 
+ * @returns 
+ */
+function is_container_full(inv) {
+    for (const i of inv.getMap().container) {
+        if (inv.getSlot(i).getItemId() == "minecraft:air") {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * cleans up the item_chests by removing a position from it
+ * @param {Pos3D} pos the storage location to be removed
+ * @param {Record<string,Pos3D[]>} item_chests
+ */
+function clean_item_chests(pos, item_chests) {
+    for (let item in item_chests) {
+        if (item_chests[item].some((e) => [e.x, e.y, e.z].every((v, i) => v == [pos.x, pos.y, pos.z][i]))) {
+            item_chests[item].splice(item_chests[item].indexOf(pos), 1);
+        }
+    }
+    let keys = Object.keys(item_chests);
+    for (let key of keys) {
+        if (item_chests[key].length == 0) {
+            delete item_chests[key];
+        }
+    }
+    return item_chests;
+}
+
+function sort() {
+    const sort_chests = find_sign("sort").map(sign_to_chest);
+    let item_chests = find_items_storage();
+    let inv;
+    while (sort_chests.length > 0) {
+        if (stop()) return;
+        open_chest(sort_chests[0]);
+        if (stop()) return;
+        Client.waitTick(5);
+        inv = Player.openInventory();
+        Client.waitTick(5);
+        let items = [];
+        for (const slot of inv.getMap().container) {
+            const item_id = inv.getSlot(slot).getItemId().split(":")[1];
+            if (Object.keys(item_chests).includes(item_id)) {
+                if (find_item_in_player("minecraft:air", inv).length == 0) {
+                    break;
+                }
+                items.push(item_id);
+                inv.quickAll(slot);
+                Client.waitTick();
+            }
+        }
+        if (items.length == 0 || is_container_empty(inv, item_chests)) {
+            sort_chests.shift();
+        }
+        Client.waitTick(5);
+        inv.closeAndDrop();
+        Client.waitTick(5);
+
+        while (items.length > 0) {
+            if (stop()) return;
+
+            if (!Object.hasOwn(item_chests, items[0])) {
+                items.shift();
+                continue;
+            }
+            const storage = item_chests[items[0]][0];
+            open_chest(storage);
+            Client.waitTick(5);
+            let inv = Player.openInventory();
+            Client.waitTick(5);
+            if (is_container_full(inv)) {
+                item_chests = clean_item_chests(storage, item_chests);
+                if (!Object.hasOwn(item_chests, items[0])) {
+                    items.shift();
+                }
+                Client.waitTick(5);
+                inv.closeAndDrop();
+                Client.waitTick(5);
+                continue;
+            }
+            inv.quickAll(find_item_in_player(items[0], inv)[0]);
+            if (find_item_in_player(items[0], inv).length == 0) {
+                items.shift();
+                Client.waitTick(5);
+                inv.closeAndDrop();
+                Client.waitTick(5);
+                continue;
+            }
+            Client.waitTick();
+            if (is_container_full(inv)) {
+                item_chests[items[0]].shift();
+                if (item_chests[items[0]].length == 0) {
+                    delete item_chests[items[0]];
+                    items.shift();
+                }
+            }
+            Client.waitTick(5);
+            inv.closeAndDrop();
+            Client.waitTick(5);
+        }
+    }
+}
+GlobalVars.putBoolean("storage_sorter_running", false);
+if (GlobalVars.getBoolean("storage_sorter_toggle")) {
+    Chat.log(Chat.createTextBuilder().append("Storage Sorter ").withColor(255, 255, 255)
+        .append("Finished").withColor(215, 188, 0));
+    GlobalVars.putBoolean("storage_sorter_toggle", false);
+}

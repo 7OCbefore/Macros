@@ -126,9 +126,51 @@ lilster03 bought your 64x ꢲ Apple for 800 rubies!
 
 ## rerequirement-7
 种植的前置操作 判断箱子中 soil,fertilizer,seeds是否充足，如果不充足则进行购买。
-soil,fertilizer是写在配置中的固定箱子，只需要再修改
+soil,fertilizer是写在配置中的固定箱子，
+但是由于有多种不同作物，所以不同作物的seeds存放在不同箱子，需要选择存放种子的箱子后才能确定需要哪种种子。
+
+判断箱子中缺少物品的操作逻辑：
+1. 按照soil,fertilizer,seeds的顺序进行判断和购买，举例：如果soil缺少，则先完成soil购买补充的操作后，再判断fertilizer是否缺少，是否需要购买补充，然后在判断seeds是否缺少，是否需要购买补充。
 
 购买soil或fertilizer的操作逻辑：
 1. 传送到yellow balloon
-2. 走向[-79,69,-133]→走向[-80,71,-141]并与在该坐标站着的Jeckyl交互两次（交互逻辑与Jacko一样）
-3. 使用quick()函数对短缺的物品进行购买，如果soil和fertilizer都短缺，则按顺序先购买soil，再购买fertilize
+2. 走向[-79,69,-133]→走向[-80,71,-141]并与在该坐标站着的Jeckyl交互两次（交互逻辑与Jacko一样）打开购买界面
+3. 使用quick()函数对短缺的物品进行购买，箱子里缺少多少就购买多少，如果背包中能够存放的数量少于箱子缺少的数量，就将背包购买满。
+背包满的判断条件是背包中没有空槽位，且仅有少于或等于1个槽位中的补充的物品（soil，fertilizer，seeds）数量小于64，其余空槽位均被64个需要补充的物品填满。
+箱子满的判断条件是箱子中没有空槽位，且仅有少于或等于1个槽位中的补充的物品（soil，fertilizer，seeds）数量小于64，其余空槽位均被64个需要补充的物品填满。
+购买seeds的操作逻辑：
+1. 与前往Jacko并与其交互的操作一样
+2. 打开购买种子界面（容器）
+3. 在当前界面获取需要补充的种子的名称，若找到则使用quick()函数对缺少的种子进行购买
+4. 如果没有获取到需要补充的种子的名称，则点击名为Next Page按钮，切换到下一页
+5. 在下一页中获取需要补充的种子的名称，使用quick()函数对缺少的种子进行购买
+
+如果是一群来自Apple的顶级工程师，他们会如何计划并实现该需求？
+
+脚本只成功与Jeckyl交互了一次，未打开购买界面，并且购买失败后并没有使用returnCommand回到realm，就直接执行种植操作，一系列问题。
+[Supply] Jeckyl container not found.
+[Supply] Purchase failed for soil.
+[Start] Soil Placement...
+[Info] Processing 4550 blocks...
+
+如果是一群来自Apple的顶级工程师，他们会如何分析问题所在，并给出解决方案。
+
+用户提示：
+与Jeckyl交互打开购买界面（容器）的操作，只需要完全复用Original\planting\services\JackoService.js中的_interactWithJacko()函数
+可能由于网络延迟，在打开容器后需要稍作等待，购买后也需要确认是否购买成功
+
+
+    "seedsByCrop": {
+      "apple": {
+        "supply": [216, 54, 396],
+        "dump": [216, 58, 398]
+      },
+      "mango": {
+        "supply": [215, 54, 396],
+        "dump": [215, 58, 398]
+      },
+      "banana": {
+        "supply": [214, 54, 396],
+        "dump": [214, 58, 398]
+      }
+    },
