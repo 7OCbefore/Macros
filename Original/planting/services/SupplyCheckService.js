@@ -370,7 +370,10 @@ class SupplyCheckService {
                 missing += this._maxStack;
                 continue;
             }
-
+            if (!this._safeGetDisplayName(item)) {
+                foreignCount++;
+                continue;
+            }
             if (!this._isTargetItem(item, targetSet)) {
                 foreignCount++;
                 continue;
@@ -464,7 +467,7 @@ class SupplyCheckService {
         const names = Array.isArray(itemNames) ? itemNames : [itemNames];
         const normalized = [];
         for (const name of names) {
-            const cleaned = this._normalizeName(name);
+            const cleaned = this._normalizeTargetName(name);
             if (cleaned) {
                 normalized.push(cleaned);
             }
@@ -473,17 +476,39 @@ class SupplyCheckService {
     }
 
     _isTargetItem(item, targetSet) {
-        const displayName = item.getName?.().getString?.() || '';
-        const itemId = item.getItemId?.() || '';
-        return targetSet.has(this._normalizeName(displayName)) || targetSet.has(this._normalizeName(itemId));
+        const displayName = this._safeGetDisplayName(item);
+        if (!displayName) {
+            return false;
+        }
+        return targetSet.has(this._normalizeItemName(displayName));
     }
 
-    _normalizeName(name) {
+    _safeGetDisplayName(item) {
+        if (!item) {
+            return '';
+        }
+        try {
+            return item.getName().getString();
+        } catch (error) {
+            return '';
+        }
+    }
+
+    _normalizeItemName(name) {
         if (!name) {
             return '';
         }
         const withoutColor = String(name).replace(/§[0-9A-FK-OR]/gi, '');
         return withoutColor.replace(/[^0-9a-zA-Z\u4e00-\u9fa5]+/g, '').toLowerCase();
+    }
+
+    _normalizeTargetName(name) {
+        if (!name) {
+            return '';
+        }
+        const raw = String(name);
+        const withoutNamespace = raw.includes(":") ? raw.split(":").pop() : raw;
+        return this._normalizeItemName(withoutNamespace);
     }
 }
 

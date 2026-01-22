@@ -164,3 +164,15 @@ tips：
       },
     }
 - 确认“箱子满 = 充足”
+
+用户操作：
+1. 启动种植v3脚本
+2. 选择作物种子箱与起点
+3. 按下1键选择soil模式
+
+脚本执行：
+前往两个存储soil的箱子检查是否充足，打开第一个supply箱子后，log信息输出错误：
+[Event Error] execute on xyz.wagyourtail.jsmacros.client.api.helpers.inventory.ItemStackHelper failed due to: Message not supported.
+如果是一群来自Apple的顶级工程师，他们会如何分析该问题并给出解决方案？
+
+由于该服务器中很多物品是服务器管理员自定义的，这就导致了这些自定义的物品的name不同，但id完全相同，所以要区分这些物品必须使用物品的name，不能使用物品的id。
