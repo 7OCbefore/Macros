@@ -41,7 +41,7 @@
     "maxTrips": 3,
     "jeckyl": {
       "teleportCommand": "/balloon yellow-balloon",
-      "pos1": [-79, 69, -133],
+      "pos1": [-75, 69, -133],
       "pos2": [-80, 71, -141],
       "interactPos": [-80, 71, -141]
     },

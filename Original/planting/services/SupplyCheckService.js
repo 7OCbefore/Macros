@@ -73,7 +73,7 @@ class SupplyCheckService {
 
         let trips = 0;
         while (trips < this._maxTrips) {
-            const status = this._getChestStatus(chestConfig.supply, itemNames, state);
+            const status = this._getChestsStatus(chestConfig, itemNames, state);
             if (!status) {
                 return false;
             }
@@ -82,7 +82,7 @@ class SupplyCheckService {
                 return false;
             }
             if (status.isFull) {
-                Chat.log(`§a[Supply] ${label} chest is full.`);
+                Chat.log(`§a[Supply] ${label} chests are full.`);
                 return true;
             }
 
@@ -105,6 +105,13 @@ class SupplyCheckService {
                 itemNames,
                 this._movementService
             );
+            if (chestConfig.dump) {
+                this._inventoryService.transferToChest(
+                    Point3D.from(chestConfig.dump),
+                    itemNames,
+                    this._movementService
+                );
+            }
 
             trips++;
         }
@@ -294,6 +301,31 @@ class SupplyCheckService {
 
         this._closeContainer(inv);
         return status;
+    }
+
+    _getChestsStatus(chestConfig, itemNames, state) {
+        const supplyStatus = this._getChestStatus(chestConfig.supply, itemNames, state);
+        if (!supplyStatus) {
+            return null;
+        }
+
+        let dumpStatus = null;
+        if (chestConfig.dump) {
+            dumpStatus = this._getChestStatus(chestConfig.dump, itemNames, state);
+            if (!dumpStatus) {
+                return null;
+            }
+        }
+
+        const foreignCount = supplyStatus.foreignCount + (dumpStatus?.foreignCount || 0);
+        const missing = supplyStatus.missing + (dumpStatus?.missing || 0);
+        const isFull = supplyStatus.isFull && (!dumpStatus || dumpStatus.isFull);
+
+        return {
+            isFull,
+            missing,
+            foreignCount
+        };
     }
 
     _openChest(chestPos, state) {
