@@ -117,7 +117,7 @@ class FarmingExecutor {
             
             this._inventoryService.transferToChest(
                 dumpPos,
-                this._config.items.transferList,
+                itemNames,
                 this._movementService
             );
 

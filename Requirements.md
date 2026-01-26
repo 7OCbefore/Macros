@@ -227,9 +227,18 @@ tips：
 [Supply] seeds not full after 3 trips.
 [Supply] Pre-check failed.
 
-TODO 用户测试中发现了问题，完成planting seeds模式后，将种子放入对应的dump箱子中时，会将玩家背包中多余的fertilizer或soil也放进去
+用户测试中发现了问题，完成planting seeds模式后，将种子放入对应的dump箱子中时，会将玩家背包中多余的fertilizer或soil也放进去
+分析问题所在并给出解决方案
 
 如果是一群来自Apple的顶级工程师，他们会如何根据当前项目代码库实现该修改需求？
 
 
 ## rerequirement-8
+TODO
+refactor:
+- 容器读取和移动重构
+
+new:
+- 通过检查和清理auctionhouse实现确保当天收购的作物上架
+- 修改背包中缺货时的补充逻辑。//先尝试从箱子中补充作物，然后再尝试通过拆分篮子补充，多余的物品放回篮子箱子
+- or暂存箱，找jacko售卖时从暂存箱中每个种类的3星作物拿3组，golden作物拿不超过64个（一组），再jacko处确认当天收购的作物后，角色背包中仅保留当天收购的3星作物，其余放入暂存箱。 该条需求针对auction上架功能
