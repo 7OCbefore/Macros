@@ -4,6 +4,7 @@
  */
 
 const Point3D = require('../core/Point3D.js');
+const { OperationMode } = require('../core/FarmState.js');
 
 class SupplyCheckService {
     constructor(config, cropRegistry, movementService, inventoryService) {
@@ -18,15 +19,15 @@ class SupplyCheckService {
         this._maxStack = config.constants?.maxStackSize || 64;
     }
 
-    ensureSuppliesReady(state) {
-        if (!this._checkAndPurchaseSoil(state)) {
-            return false;
+    ensureSuppliesReady(state, mode) {
+        if (mode === OperationMode.SOIL) {
+            return this._checkAndPurchaseSoil(state);
         }
-        if (!this._checkAndPurchaseFertilizer(state)) {
-            return false;
+        if (mode === OperationMode.FERTILIZE) {
+            return this._checkAndPurchaseFertilizer(state);
         }
-        if (!this._checkAndPurchaseSeeds(state)) {
-            return false;
+        if (mode === OperationMode.PLANT) {
+            return this._checkAndPurchaseSeeds(state);
         }
         return true;
     }

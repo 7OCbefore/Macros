@@ -211,7 +211,7 @@ class EventHandler {
 
         if (mode) {
             this._state.resetErrors();
-            if (this._supplyCheck && !this._supplyCheck.ensureSuppliesReady(this._state)) {
+            if (this._supplyCheck && !this._supplyCheck.ensureSuppliesReady(this._state, mode)) {
                 Chat.log('§c[Supply] Pre-check failed.');
                 return;
             }
