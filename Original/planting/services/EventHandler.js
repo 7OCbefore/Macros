@@ -209,21 +209,45 @@ class EventHandler {
             mode = OperationMode.WATER;
         }
 
-        if (mode) {
-            this._state.resetErrors();
-            if (this._supplyCheck && !this._supplyCheck.ensureSuppliesReady(this._state, mode)) {
+        if (!mode) {
+            return;
+        }
+
+        const sequence = this._buildModeSequence(mode);
+        if (sequence.length === 0) {
+            return;
+        }
+
+        this._state.resetErrors();
+        for (const step of sequence) {
+            if (this._supplyCheck && !this._supplyCheck.ensureSuppliesReady(this._state, step)) {
                 Chat.log('§c[Supply] Pre-check failed.');
                 return;
             }
-            this._executor.execute(this._state, mode);
-            
-            // Auto-chain Water after Plant if successful
-            if (mode === OperationMode.PLANT && this._state.errorCount === 0) {
-                Chat.log("§a[Auto] Planting finished successfully. Starting Watering...");
+            this._executor.execute(this._state, step);
+            if (this._state.errorCount > 0) {
+                return;
+            }
+            if (step !== sequence[sequence.length - 1]) {
                 Client.waitTick(20);
-                this._executor.execute(this._state, OperationMode.WATER);
             }
         }
+    }
+
+    _buildModeSequence(startMode) {
+        if (startMode === OperationMode.SOIL) {
+            return [OperationMode.SOIL, OperationMode.FERTILIZE, OperationMode.PLANT, OperationMode.WATER];
+        }
+        if (startMode === OperationMode.FERTILIZE) {
+            return [OperationMode.FERTILIZE, OperationMode.PLANT, OperationMode.WATER];
+        }
+        if (startMode === OperationMode.PLANT) {
+            return [OperationMode.PLANT, OperationMode.WATER];
+        }
+        if (startMode === OperationMode.WATER) {
+            return [OperationMode.WATER];
+        }
+        return [];
     }
 
 }

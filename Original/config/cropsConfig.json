@@ -57,8 +57,43 @@
             "chestPos": [204, 56, 388]
           }
         },
+        
         "jackoPrice": {
           "star3": 17,
+          "golden": null
+        }
+      }
+    },
+    "cron": {
+      "displayName": "Cron",
+      "seedItems": ["Cron Seeds"],
+      "vending": {
+        "basket": {
+          "star3": {
+            "name": "ꢲ Cron Crate",
+            "chestPos": [204, 56, 388]
+          }
+        },
+        
+        "jackoPrice": {
+          "star3": 14,
+          "golden": null
+        }
+      }
+    },
+    "pineapple": {
+      "displayName": "Pineapple",
+      "seedItems": ["Pineapple Seeds"],
+      "vending": {
+        "basket": {
+          "star3": {
+            "name": "ꢲ Pineapple Basket",
+            "chestPos": [204, 56, 388]
+          }
+        },
+        
+        "jackoPrice": {
+          "star3": 14,
           "golden": null
         }
       }
