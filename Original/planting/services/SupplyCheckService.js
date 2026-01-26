@@ -71,29 +71,79 @@ class SupplyCheckService {
             return false;
         }
 
-        let trips = 0;
-        while (trips < this._maxTrips) {
-            const status = this._getChestsStatus(chestConfig, itemNames, state);
-            if (!status) {
+        let supplyStatus = this._getChestStatus(chestConfig.supply, itemNames, state);
+        if (!supplyStatus) {
+            return false;
+        }
+
+        let dumpStatus = null;
+        if (chestConfig.dump) {
+            dumpStatus = this._getChestStatus(chestConfig.dump, itemNames, state);
+            if (!dumpStatus) {
                 return false;
             }
-            if (status.foreignCount > 0) {
+        }
+        let combined = this._combineChestsStatus(supplyStatus, dumpStatus);
+        if (combined.foreignCount > 0) {
+            Chat.log(`§c[Supply] ${label} chest contains non-target items.`);
+            return false;
+        }
+        if (combined.missing === 0) {
+            Chat.log(`§a[Supply] ${label} chests are full.`);
+            return true;
+        }
+
+        if (this._countItemsInInventory(itemNames) > 0) {
+            Chat.log(`§e[Supply] Using inventory items to refill ${label}.`);
+            if (combined.missingSupply > 0) {
+                this._inventoryService.transferToChest(
+                    Point3D.from(chestConfig.supply),
+                    itemNames,
+                    this._movementService
+                );
+            }
+            if (chestConfig.dump && combined.missingDump > 0) {
+                this._inventoryService.transferToChest(
+                    Point3D.from(chestConfig.dump),
+                    itemNames,
+                    this._movementService
+                );
+            }
+
+            if (combined.missingSupply > 0) {
+                supplyStatus = this._getChestStatus(chestConfig.supply, itemNames, state);
+                if (!supplyStatus) {
+                    return false;
+                }
+            }
+            if (chestConfig.dump && combined.missingDump > 0) {
+                dumpStatus = this._getChestStatus(chestConfig.dump, itemNames, state);
+                if (!dumpStatus) {
+                    return false;
+                }
+            }
+
+            combined = this._combineChestsStatus(supplyStatus, dumpStatus);
+            if (combined.foreignCount > 0) {
                 Chat.log(`§c[Supply] ${label} chest contains non-target items.`);
                 return false;
             }
-            if (status.isFull) {
+            if (combined.missing === 0) {
                 Chat.log(`§a[Supply] ${label} chests are full.`);
                 return true;
             }
+        }
 
+        let trips = 0;
+        while (trips < this._maxTrips) {
             const capacity = this._getInventoryCapacity(itemNames);
             if (capacity <= 0) {
                 Chat.log(`§c[Supply] Inventory has no capacity for ${label}.`);
                 return false;
             }
 
-            const purchaseAmount = Math.min(status.missing, capacity);
-            Chat.log(`§e[Supply] ${label} missing ${status.missing}. Buying ${purchaseAmount}...`);
+            const purchaseAmount = Math.min(combined.missing, capacity);
+            Chat.log(`§e[Supply] ${label} missing ${combined.missing}. Buying ${purchaseAmount}...`);
 
             if (!purchaseHandler(itemNames, purchaseAmount, state)) {
                 Chat.log(`§c[Supply] Failed to purchase ${label}.`);
@@ -102,17 +152,42 @@ class SupplyCheckService {
 
             this._returnToBase();
 
-            this._inventoryService.transferToChest(
-                Point3D.from(chestConfig.supply),
-                itemNames,
-                this._movementService
-            );
-            if (chestConfig.dump) {
+            if (combined.missingSupply > 0) {
+                this._inventoryService.transferToChest(
+                    Point3D.from(chestConfig.supply),
+                    itemNames,
+                    this._movementService
+                );
+            }
+            if (chestConfig.dump && combined.missingDump > 0) {
                 this._inventoryService.transferToChest(
                     Point3D.from(chestConfig.dump),
                     itemNames,
                     this._movementService
                 );
+            }
+
+            if (combined.missingSupply > 0) {
+                supplyStatus = this._getChestStatus(chestConfig.supply, itemNames, state);
+                if (!supplyStatus) {
+                    return false;
+                }
+            }
+            if (chestConfig.dump && combined.missingDump > 0) {
+                dumpStatus = this._getChestStatus(chestConfig.dump, itemNames, state);
+                if (!dumpStatus) {
+                    return false;
+                }
+            }
+
+            combined = this._combineChestsStatus(supplyStatus, dumpStatus);
+            if (combined.foreignCount > 0) {
+                Chat.log(`§c[Supply] ${label} chest contains non-target items.`);
+                return false;
+            }
+            if (combined.missing === 0) {
+                Chat.log(`§a[Supply] ${label} chests are full.`);
+                return true;
             }
 
             trips++;
@@ -412,28 +487,24 @@ class SupplyCheckService {
         return status;
     }
 
-    _getChestsStatus(chestConfig, itemNames, state) {
-        const supplyStatus = this._getChestStatus(chestConfig.supply, itemNames, state);
-        if (!supplyStatus) {
-            return null;
-        }
-
-        let dumpStatus = null;
-        if (chestConfig.dump) {
-            dumpStatus = this._getChestStatus(chestConfig.dump, itemNames, state);
-            if (!dumpStatus) {
-                return null;
-            }
-        }
-
-        const foreignCount = supplyStatus.foreignCount + (dumpStatus?.foreignCount || 0);
-        const missing = supplyStatus.missing + (dumpStatus?.missing || 0);
-        const isFull = supplyStatus.isFull && (!dumpStatus || dumpStatus.isFull);
-
+    _combineChestsStatus(supplyStatus, dumpStatus) {
+        const safeSupply = supplyStatus || { missing: 0, foreignCount: 0, isFull: true };
+        const safeDump = dumpStatus || { missing: 0, foreignCount: 0, isFull: true };
+        const missingSupply = safeSupply.missingEffective !== undefined
+            ? safeSupply.missingEffective
+            : (safeSupply.missing || 0);
+        const missingDump = safeDump.missingEffective !== undefined
+            ? safeDump.missingEffective
+            : (safeDump.missing || 0);
+        const foreignCount = (safeSupply.foreignCount || 0) + (safeDump.foreignCount || 0);
+        const rawMissing = (safeSupply.missing || 0) + (safeDump.missing || 0);
         return {
-            isFull,
-            missing,
-            foreignCount
+            missingSupply,
+            missingDump,
+            missing: missingSupply + missingDump,
+            rawMissing,
+            foreignCount,
+            isFull: safeSupply.isFull && safeDump.isFull
         };
     }
 
@@ -541,13 +612,23 @@ class SupplyCheckService {
         }
 
         const isFull = emptyCount === 0 && foreignCount === 0 && partialCount <= 1;
+        const missingEffective = isFull ? 0 : missing;
         return {
             isFull,
             missing,
+            missingEffective,
             emptyCount,
             partialCount,
             foreignCount
         };
+    }
+
+    _countItemsInInventory(itemNames) {
+        const inv = Player.openInventory();
+        const slotInfo = this._getSlotRanges(inv);
+        const count = this._countItemsInSlots(inv, slotInfo.playerSlots, itemNames);
+        inv.closeAndDrop();
+        return count;
     }
 
     _getInventoryCapacity(itemNames, inv = null, playerSlots = null) {

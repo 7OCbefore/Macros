@@ -183,19 +183,6 @@ tips：
 1. 移动结束时距离npc较远，无法与npc交互
 2. 与npc交互操作时，瞄准的时npc边缘，这会导致第二次与npc交互失败。必须完全按照Original\planting\services\JackoService.js中与npc交互的逻辑进行操作
 
-//TODO
-测试发现 已经成功与Jeckly交互两次并打开了购买界面，但是对soil进行了一次购买操作就报出失败信息并停止了操作：
-[Supply][Debug:ShopOpen] total=90 main=27 player=27 container=54 itemSlot=10 itemName=Bag o' Soil
-[Supply][Debug:ShopOpen] targets=Bag o' Soil
-[Supply] Purchase delta not observed after retries.
-[Supply] Failed to purchase soil.
-[Supply] Pre-check failed. 
-
-这次测试中，正常购买将背包填满，但是将背包填满后未使用"returnCommand": "/realm tp 7OCbefore"回到realm中，将背包中的物品全部移到箱子中，而是直接转头试图在主城世界中走到箱子坐标处。以下是log信息
-[Supply][Debug:ShopOpen] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=10 itemName=Bag o' Soil
-[Supply][Debug:ShopOpen] targets=Bag o' Soil
-[Supply] Purchase delta not observed after retries.
-
 购买种子时出错，测试中购买的mango pit，与jacko交互后在第一页并没有找到mango pit，于是点击Next Page，此时界面中已经可以找到mango pit，但是却关闭了购买界面（容器）并提示"Seed item not found in shop pages."
 [Supply][Debug:SeedShopOpen] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=-1 itemName=
 [Supply][Debug:SeedShopOpen] targets=Mango Pit
@@ -208,7 +195,15 @@ tips：
 
 如果是一群来自Apple的顶级工程师，他们会如何根据当前项目代码库和用户给出的已知信息分析该问题并给出解决方案？
 
+测试中，用户观察到的问题：
+脚本启动，第一次检查时supply箱子中物品已经是满的了，dump箱子中物品缺少，但是脚本购买物品回到realm中后会再次检查supply箱子是否充足，将背包中的物品补充到dump箱子中后又会再一次检查supply箱子是否充足，然后再检查dump箱子是否充足。这个逻辑过于冗余且繁琐。
+分析该逻辑的执行流程，并为用户提出优化流程供用户查看和确认
+如果是一群来自Apple的顶级工程师，他们会如何根据当前项目代码库和用户给出的已知信息分析该问题并给出解决方案？
 
-TODO 测试中，用户观察到当购买完成回到realm中后，脚本会先尝试补充supply
+背包满的判断条件是背包中没有空槽位，且仅有少于或等于1个槽位中的补充的物品（soil，fertilizer，seeds）数量小于64，其余空槽位均被64个需要补充的物品填满; 箱子满的判断条件是箱子中没有空槽位，且仅有少于或等于1个槽位中的补充的物品（soil，fertilizer，seeds）数量小于64，其余空槽位均被64个需要补充的物品填满。
+补充后，已经满足上述条件了，但是却输出：
+[Supply] fertilizer missing 7. Buying 7...
 
 分析问题所在，并给出解决方案
+
+后续还有一个问题，就是在第一遍检查中，若当角色背包中存在需要补充的物品时，应该将背包中的物品补充到箱子中，而不是直接去购买。
