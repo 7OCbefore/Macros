@@ -4,138 +4,192 @@
  * @version 1.1.0
  */
 const outputFilePath = "D:/Minecraft/originRealms/.minecraft/versions/新新源神 启动！1.20.6-Fabric 0.16.0/config/jsMacros/Macros/Original/bossbars.txt";
+const firstContainerTimeoutTicks = 200;
+const nextContainerTimeoutTicks = 200;
+const containerOpenWaitTicks = 4;
+const containerCloseWaitTicks = 4;
 /**
- * Get all slots data from inventory (container + player inventory)
+ * Get container slots data (exclude player inventory)
  * @param {Object} inv - Inventory object from Player.openInventory()
- * @returns {Array<{slot: number, name: string, lore?: Array<string>}>}
+ * @returns {Array<{slot: number, name: string}>}
  */
-function getAllSlotsData(inv) {
-    const totalSlots = inv.getTotalSlots();
+function getContainerSlotsData(inv) {
     const slotsData = [];
-    for (let slotIndex = 0; slotIndex < totalSlots; slotIndex++) {
+    const containerSlots = getContainerSlotIndexes(inv);
+    for (const slotIndex of containerSlots) {
         const item = inv.getSlot(slotIndex);
         if (item) {
-            // Get name without any processing - raw string from Minecraft
             const name = item.getName().getString();
-            // Get item lore
-            const lore = getItemLore(item);
             slotsData.push({
                 slot: slotIndex,
-                name: name,
-                lore: lore
+                name: name
             });
         }
     }
     return slotsData;
 }
-/**
- * Get item lore from NBT data
- * @param {Object} item - Item object from inventory slot
- * @returns {Array<string>} Array of lore strings, empty if no lore
- */
-function getItemLore(item) {
-    const lore = [];
-    
-    try {
-        // Get NBT data from item
-        const nbt = item.getNbt();
-        if (!nbt) {
-            return lore;
-        }
-        
-        // Try to get display compound first (standard Minecraft format)
-        const display = nbt.getCompound("display");
-        if (display) {
-            const loreList = display.getList("Lore");
-            if (loreList) {
-                const size = loreList.size();
-                for (let i = 0; i < size; i++) {
-                    // Each lore element is a StringTag, get its string value
-                    const loreString = loreList.getString(i);
-                    if (loreString) {
-                        lore.push(loreString);
-                    }
-                }
-            }
-        }
-    } catch (e) {
-        // Item may not have NBT or lore, silently return empty
+
+function getContainerSlotIndexes(inv) {
+    const map = inv.getMap();
+    if (map?.main?.length) {
+        const mainStart = map.main[0];
+        return buildRange(0, mainStart);
     }
-    
-    return lore;
+    const totalSlots = inv.getTotalSlots();
+    const playerSlots = 36;
+    if (totalSlots > playerSlots) {
+        return buildRange(0, totalSlots - playerSlots);
+    }
+    return buildRange(0, totalSlots);
+}
+
+function buildRange(start, end) {
+    const slots = [];
+    for (let i = start; i < end; i++) {
+        slots.push(i);
+    }
+    return slots;
 }
 /**
- * Write slots data to file (includes lore info)
- * @param {Array<{slot: number, name: string, lore?: Array<string>}>} slotsData
- * @param {string} filePath
+ * Build slots data report
+ * @param {Array<{slot: number, name: string}>} slotsData
+ * @param {number} passIndex
+ * @param {string} containerTitle
+ * @returns {string}
  */
-function writeSlotsDataToFile(slotsData, filePath) {
-    let content = "";
+function buildSlotsDataReport(slotsData, passIndex, containerTitle) {
+    let content = `=== Container ${passIndex + 1}`;
+    if (containerTitle) {
+        content += ` (${containerTitle})`;
+    }
+    content += " ===\n\n";
     
     for (const data of slotsData) {
         content += `Slot ${data.slot}: ${data.name}\n`;
-        
-        // 如果有 lore 信息，添加到输出中
-        if (data.lore && data.lore.length > 0) {
-            for (let i = 0; i < data.lore.length; i++) {
-                content += `  │ Lore ${i + 1}: ${data.lore[i]}\n`;
-            }
-        } else {
-            content += `  │ (No lore)\n`;
-        }
-        content += "\n";
     }
     
-    // FS.open() + FileHandler.write() will create or overwrite the file
+    return content;
+}
+
+/**
+ * Write report content to file
+ * @param {string} content
+ * @param {string} filePath
+ * @param {number} containerCount
+ * @param {number} itemCount
+ */
+function writeReportToFile(content, filePath, containerCount, itemCount) {
     const file = FS.open(filePath);
     file.write(content);
-    // FileHandler auto-closes, no close() needed
-    Chat.log(`§a[Debug] Written ${slotsData.length} items to ${filePath}`);
+    Chat.log(`§a[Debug] Written ${itemCount} items from ${containerCount} container(s) to ${filePath}`);
+}
+
+function getContainerTitle(inv) {
+    if (inv && typeof inv.getContainerTitle === "function") {
+        const title = inv.getContainerTitle();
+        return title ? String(title) : "";
+    }
+    return "";
+}
+
+function getContainerSignature(inv) {
+    const title = getContainerTitle(inv);
+    return `${title}|${inv.getTotalSlots()}`;
+}
+
+function waitForContainerOpen(timeoutTicks) {
+    let ticks = 0;
+    while (!Hud.isContainer() && ticks < timeoutTicks) {
+        Client.waitTick(1);
+        ticks++;
+    }
+    return Hud.isContainer();
+}
+
+function waitForContainerChange(prevSignature, timeoutTicks) {
+    let ticks = 0;
+    while (ticks < timeoutTicks) {
+        Client.waitTick(1);
+        if (!Hud.isContainer()) {
+            ticks++;
+            continue;
+        }
+        const inv = Player.openInventory();
+        if (inv && getContainerSignature(inv) !== prevSignature) {
+            Client.waitTick(containerOpenWaitTicks);
+            return true;
+        }
+        ticks++;
+    }
+    return false;
 }
 /**
  * Main function - wait for container and output data
  */
 function main() {
     Chat.log("§a[Debug] Waiting for container to open...");
-    
-    // Wait for user to open a container or workbench
-    while (!Hud.isContainer()) {
-        Client.waitTick(1);
-    }
-    
-    // Container opened, get inventory data
-    Chat.log("§a[Debug] Container opened, retrieving data...");
-    
-    const inv = Player.openInventory();
-    if (!inv) {
-        Chat.log("§c[Debug] Failed to open inventory");
+    if (!waitForContainerOpen(firstContainerTimeoutTicks)) {
+        Chat.log("§c[Debug] Timeout waiting for container");
         JavaWrapper.stop();
         return;
     }
-    
-    const slotsData = getAllSlotsData(inv);
-    
-    // Write to file
-    writeSlotsDataToFile(slotsData, outputFilePath);
-    
-    // Also log to chat for quick verification
-    Chat.log(`§e[Debug] Retrieved ${slotsData.length} slots:`);
-    for (const data of slotsData) {
-        Chat.log(`§7  Slot ${data.slot}: ${data.name}`);
-    }
-    
-    // Log lore info
-    let itemsWithLore = 0;
-    for (const data of slotsData) {
-        if (data.lore && data.lore.length > 0) {
-            itemsWithLore++;
+
+    const reports = [];
+    let totalItems = 0;
+    let prevSignature = null;
+
+    for (let passIndex = 0; passIndex < 2; passIndex++) {
+        if (passIndex === 1) {
+            Chat.log("§a[Debug] Waiting for next container (change)...");
+            if (!waitForContainerChange(prevSignature, nextContainerTimeoutTicks)) {
+                Chat.log("§c[Debug] Next container did not open in time");
+                break;
+            }
+        }
+
+        const inv = Player.openInventory();
+        if (!inv) {
+            Chat.log("§c[Debug] Failed to open inventory");
+            break;
+        }
+
+        Client.waitTick(containerOpenWaitTicks);
+
+        const slotsData = getContainerSlotsData(inv);
+        const title = getContainerTitle(inv);
+        const report = buildSlotsDataReport(slotsData, passIndex, title);
+        reports.push(report);
+        totalItems += slotsData.length;
+        prevSignature = getContainerSignature(inv);
+
+        Chat.log(`§e[Debug] Retrieved ${slotsData.length} slots (container ${passIndex + 1}).`);
+        for (const data of slotsData) {
+            Chat.log(`§7  Slot ${data.slot}: ${data.name}`);
+        }
+
+        let itemsWithLore = 0;
+        for (const data of slotsData) {
+            if (data.lore && data.lore.length > 0) {
+                itemsWithLore++;
+            }
+        }
+        Chat.log(`§e[Debug] Items with lore: ${itemsWithLore}/${slotsData.length}`);
+
+        if (passIndex === 1) {
+            inv.close();
+            Client.waitTick(containerCloseWaitTicks);
+        } else {
+            Chat.log("§a[Debug] Keep container open to open inner/new container...");
         }
     }
-    Chat.log(`§e[Debug] Items with lore: ${itemsWithLore}/${slotsData.length}`);
-    
-    inv.close();
-    
-    Chat.log("§a[Debug] Done! Data written to " + outputFilePath);
+
+    if (reports.length > 0) {
+        writeReportToFile(reports.join("\n"), outputFilePath, reports.length, totalItems);
+        Chat.log("§a[Debug] Done! Data written to " + outputFilePath);
+    } else {
+        Chat.log("§c[Debug] No container data captured");
+    }
+
     JavaWrapper.stop();
 }
 // Start the script

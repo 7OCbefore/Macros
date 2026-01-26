@@ -39,6 +39,8 @@
     },
   "purchase": {
     "maxTrips": 3,
+    "returnCommand": "/realm tp 7OCbefore",
+    "pageWaitTicks": 8,
     "jeckyl": {
       "teleportCommand": "/balloon yellow-balloon",
       "pos1": [-75, 69, -133],

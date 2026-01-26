@@ -185,5 +185,64 @@ tips：
 
 //TODO
 测试发现 已经成功与Jeckly交互两次并打开了购买界面，但是对soil进行了一次购买操作就报出失败信息并停止了操作：
+[Supply][Debug:ShopOpen] total=90 main=27 player=27 container=54 itemSlot=10 itemName=Bag o' Soil
+[Supply][Debug:ShopOpen] targets=Bag o' Soil
+[Supply] Purchase delta not observed after retries.
 [Supply] Failed to purchase soil.
+[Supply] Pre-check failed. 
+
+这次测试中，正常购买将背包填满，但是将背包填满后未使用"returnCommand": "/realm tp 7OCbefore"回到realm中，将背包中的物品全部移到箱子中，而是直接转头试图在主城世界中走到箱子坐标处。以下是log信息
+[Supply][Debug:ShopOpen] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=10 itemName=Bag o' Soil
+[Supply][Debug:ShopOpen] targets=Bag o' Soil
+[Supply] Purchase delta not observed after retries.
+
+购买种子时出错，测试中购买的mango pit，与jacko交互后在第一页并没有找到mango pit，于是点击Next Page，此时界面中已经可以找到mango pit，但是却提示"Seed item not found in shop pages."
+[Supply][Debug:SeedShopOpen] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=-1 itemName=
+[Supply][Debug:SeedShopOpen] targets=Mango Pit
+[Supply] Seed item not found in shop pages.
+[Supply] Failed to purchase seeds.
 [Supply] Pre-check failed.
+分析问题所在，并给出解决方案
+
+//TODO
+应该要做一个购买界面（容器）的空槽位判断，空则跳过，以下是结果和log信息：
+[Supply][Debug:SeedShopOpen] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=-1 itemName=
+[Supply][Debug:SeedShopOpen] targets=Mango Pit
+[Supply][Debug:SeedShopPage1] Dumping 90 slots:
+[Supply][Debug:SeedShopPage1] slot 0: EMPTY
+[Event Error] execute on xyz.wagyourtail.jsmacros.client.api.helpers.inventory.ItemStackHelper failed due to: Message not supported.
+
+
+[Supply][Debug:SeedShopOpen] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=-1 itemName=
+[Supply][Debug:SeedShopOpen] targets=Mango Pit
+[Supply][Debug:SeedShopPage1] Dumping 90 slots:
+[Supply][Debug:SeedShopPage1] slot 1: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage1] slot 2: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage1] slot 3: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage1] slot 4: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage1] slot 10: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage1] slot 11: UNSUPPORTED item message
+[Supply][Debug] Seed shop next page clicked.
+[Supply][Debug:SeedShopPage2] total=90 main=27 hotbar=9 player=36 container=54 itemSlot=-1 itemName=
+[Supply][Debug:SeedShopPage2] targets=Mango Pit
+[Supply][Debug:SeedShopPage2] Dumping 90 slots:
+[Supply][Debug:SeedShopPage2] slot 1: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage2] slot 2: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage2] slot 3: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage2] slot 4: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage2] slot 10: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage2] slot 11: UNSUPPORTED item message
+[Supply][Debug:SeedShopPage2] slot 12: UNSUPPORTED item message
+
+@Original\example\example1.js 该脚本是等待用户打开容器，然后将容器的内容读取并写入到@Original\bossbars.txt 中。
+但是该脚本执行一次就停止运行了，输出信息：
+Context execution was cancelled.
+ at main (example1.js 139:5)
+ at :program (example1.js 142:1)
+
+现在用户需要该脚本运行两次才停止，即打开一个容器后该容器中有按钮能打开内嵌容器或新容器
+如果是一群来自Apple的顶级工程师他们会怎么分析并实现该需求
+
+将@Original\example\example1.js中有关lore的部分删除，输出不需要lore信息。并且不要将背包中的物品信息写入文件。
+
+测试中，用户观察到当购买完成回到realm中后，脚本会先尝试补充supply

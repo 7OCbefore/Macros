@@ -94,7 +94,7 @@ function getAuctionHouseItems() {
     const items = [];
 
     const mainStartIndex = ah.getMap().main?.at(0);
-    const ahEndIndex = mainStartIndex; // 假设 AH 物品都在 mainStartIndex 前面
+    const ahEndIndex = mainStartIndex; // AH 物品都在 mainStartIndex 前面
 
     if (ahEndIndex === undefined) {
         Chat.log("§c[错误] 无法确定AH物品范围，AH界面可能不正常。");
