@@ -100,6 +100,8 @@ class SupplyCheckService {
                 return false;
             }
 
+            this._returnToBase();
+
             this._inventoryService.transferToChest(
                 Point3D.from(chestConfig.supply),
                 itemNames,
@@ -139,6 +141,8 @@ class SupplyCheckService {
         const slotInfo = this._getSlotRanges(shopInv);
         const itemSlot = this._findItemSlot(shopInv, slotInfo.containerSlots, itemNames);
 
+        this._logShopDebug('ShopOpen', shopInv, slotInfo, itemSlot, itemNames);
+
         if (itemSlot < 0) {
             Chat.log('§c[Supply] Item not found in shop.');
             this._closeContainer(shopInv);
@@ -158,12 +162,21 @@ class SupplyCheckService {
 
         let slotInfo = this._getSlotRanges(shopInv);
         let itemSlot = this._findItemSlot(shopInv, slotInfo.containerSlots, itemNames);
+        let currentSignature = this._getContainerSignature(shopInv);
+
+        this._logShopDebug('SeedShopOpen', shopInv, slotInfo, itemSlot, itemNames);
 
         if (itemSlot < 0) {
             if (this._clickNextPage(shopInv, slotInfo.containerSlots, npcConfig?.nextPageName)) {
-                Client.waitTick(6);
-                slotInfo = this._getSlotRanges(shopInv);
-                itemSlot = this._findItemSlot(shopInv, slotInfo.containerSlots, itemNames);
+                const changed = this._waitForContainerChange(currentSignature);
+                if (!changed) {
+                    Client.waitTick(this._purchase.pageWaitTicks || 6);
+                }
+                const refreshed = Player.openInventory();
+                slotInfo = this._getSlotRanges(refreshed);
+                itemSlot = this._findItemSlot(refreshed, slotInfo.containerSlots, itemNames);
+                currentSignature = this._getContainerSignature(refreshed);
+                this._logShopDebug('SeedShopPage2', refreshed, slotInfo, itemSlot, itemNames);
             }
         }
 
@@ -190,20 +203,48 @@ class SupplyCheckService {
             }
 
             inv.quick(itemSlot);
-            Client.waitTick(1);
-
-            const newCount = this._countItemsInSlots(inv, playerSlots, itemNames);
-            const delta = Math.max(0, newCount - currentCount);
-            if (delta <= 0) {
+            const result = this._waitForPurchaseDelta(inv, playerSlots, itemNames, currentCount);
+            if (result.delta <= 0) {
+                Chat.log('§e[Supply] Purchase delta not observed after retries.');
                 break;
             }
 
             purchasedAny = true;
-            remaining -= delta;
-            currentCount = newCount;
+            remaining -= result.delta;
+            currentCount = result.newCount;
         }
 
         return purchasedAny;
+    }
+
+    _waitForPurchaseDelta(inv, playerSlots, itemNames, currentCount) {
+        const attempts = this._purchase.deltaRetries || 3;
+        const waitTicks = this._purchase.deltaWaitTicks || 6;
+        let newCount = currentCount;
+
+        for (let i = 0; i < attempts; i++) {
+            Client.waitTick(waitTicks);
+            newCount = this._countItemsInSlots(inv, playerSlots, itemNames);
+            const delta = Math.max(0, newCount - currentCount);
+            if (delta > 0) {
+                return { delta, newCount };
+            }
+        }
+
+        return { delta: 0, newCount };
+    }
+
+    _logShopDebug(tag, inv, slotInfo, itemSlot, itemNames) {
+        const totalSlots = inv.getTotalSlots();
+        const map = inv.getMap();
+        const mainLen = map?.main?.length || 0;
+        const hotbarLen = map?.hotbar?.length || 0;
+        const playerLen = slotInfo?.playerSlots?.length || 0;
+        const containerLen = slotInfo?.containerSlots?.length || 0;
+        const sampleItem = itemSlot >= 0 ? this._safeGetDisplayName(inv.getSlot(itemSlot)) : '';
+        const targets = (Array.isArray(itemNames) ? itemNames : [itemNames]).join(', ');
+        Chat.log(`§7[Supply][Debug:${tag}] total=${totalSlots} main=${mainLen} hotbar=${hotbarLen} player=${playerLen} container=${containerLen} itemSlot=${itemSlot} itemName=${sampleItem}`);
+        Chat.log(`§7[Supply][Debug:${tag}] targets=${targets}`);
     }
 
     _clickNextPage(inv, containerSlots, nextPageName) {
@@ -217,6 +258,44 @@ class SupplyCheckService {
         inv.click(nextSlot);
         Client.waitTick(2);
         return true;
+    }
+
+    _getContainerSignature(inv) {
+        const title = inv && typeof inv.getContainerTitle === 'function'
+            ? String(inv.getContainerTitle() || '')
+            : '';
+        const syncId = this._getContainerSyncId(inv);
+        return `${title}|${inv.getTotalSlots()}|${syncId}`;
+    }
+
+    _getContainerSyncId(inv) {
+        try {
+            if (inv && typeof inv.getCurrentSyncId === 'function') {
+                return inv.getCurrentSyncId();
+            }
+        } catch (error) {
+            return 0;
+        }
+        return 0;
+    }
+
+    _waitForContainerChange(prevSignature) {
+        const timeout = this._timings.containerWaitTimeout || 100;
+        let ticks = 0;
+        while (ticks < timeout) {
+            Client.waitTick(1);
+            if (!Hud.isContainer()) {
+                ticks++;
+                continue;
+            }
+            const inv = Player.openInventory();
+            if (this._getContainerSignature(inv) !== prevSignature) {
+                Client.waitTick(this._timings.chestWaitTicks || 6);
+                return true;
+            }
+            ticks++;
+        }
+        return false;
     }
 
     _openNpcShop(npcConfig, state) {
@@ -279,6 +358,10 @@ class SupplyCheckService {
         }
         Chat.say(command);
         Client.waitTick(this._timings.teleportWait || 0);
+    }
+
+    _returnToBase() {
+        this._teleport(this._purchase.returnCommand);
     }
 
     _lookAtBlockCenter(player, pos) {
@@ -395,9 +478,21 @@ class SupplyCheckService {
         const totalSlots = inv.getTotalSlots();
         if (map?.main?.length) {
             const mainStart = map.main[0];
+            const playerSlots = [...map.main];
+            if (map.hotbar?.length) {
+                playerSlots.push(...map.hotbar);
+            }
             return {
                 containerSlots: this._buildRange(0, mainStart),
-                playerSlots: [...map.main]
+                playerSlots
+            };
+        }
+        const maxInvSlots = this._config.constants?.maxInventorySlots || 36;
+        if (totalSlots >= maxInvSlots) {
+            const playerStart = totalSlots - maxInvSlots;
+            return {
+                containerSlots: this._buildRange(0, playerStart),
+                playerSlots: this._buildRange(playerStart, totalSlots)
             };
         }
         return {

@@ -32,6 +32,5 @@ planting/
 - Event listeners wrap handlers with try/catch and log errors.
 
 ## ANTI-PATTERNS
-- TODO in `作物自动售货机-v2.js` for smart restock remains unimplemented.
 - Known issues listed in `种植_v3.js` (restock edge misses, large-angle smoothing, GUI interference).
 - Legacy scripts (`收菜.js`, `浇水.js`) bypass the service layer.
