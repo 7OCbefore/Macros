@@ -136,6 +136,7 @@ class SupplyCheckService {
         }
 
         let trips = 0;
+        let successfulTrips = 0;
         while (trips < this._maxTrips) {
             const capacity = this._getInventoryCapacity(itemNames);
             if (capacity <= 0) {
@@ -150,6 +151,7 @@ class SupplyCheckService {
                 Chat.log(`§c[Supply] Failed to purchase ${label}.`);
                 return false;
             }
+            successfulTrips++;
 
             this._returnToBase();
 
@@ -192,6 +194,11 @@ class SupplyCheckService {
             }
 
             trips++;
+        }
+
+        if (label === 'seeds' && successfulTrips === this._maxTrips) {
+            Chat.log(`§e[Supply] ${label} not full after ${this._maxTrips} trips, continuing.`);
+            return true;
         }
 
         Chat.log(`§c[Supply] ${label} not full after ${this._maxTrips} trips.`);
@@ -499,10 +506,20 @@ class SupplyCheckService {
             : (safeDump.missing || 0);
         const foreignCount = (safeSupply.foreignCount || 0) + (safeDump.foreignCount || 0);
         const rawMissing = (safeSupply.missing || 0) + (safeDump.missing || 0);
+        const emptyCount = (safeSupply.emptyCount || 0) + (safeDump.emptyCount || 0);
+        const partialCount = (safeSupply.partialCount || 0) + (safeDump.partialCount || 0);
+
+        let finalMissingSupply = missingSupply;
+        let finalMissingDump = missingDump;
+        if (emptyCount === 0 && foreignCount === 0 && partialCount <= 1) {
+            finalMissingSupply = 0;
+            finalMissingDump = 0;
+        }
+
         return {
-            missingSupply,
-            missingDump,
-            missing: missingSupply + missingDump,
+            missingSupply: finalMissingSupply,
+            missingDump: finalMissingDump,
+            missing: finalMissingSupply + finalMissingDump,
             rawMissing,
             foreignCount,
             isFull: safeSupply.isFull && safeDump.isFull

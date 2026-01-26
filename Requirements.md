@@ -211,17 +211,25 @@ tips：
 用户测试中发现了问题，不应该在每个模式启动时检查所有物品是否充足。
 应该在placing soil模式就只检查soil充足，在fertilizing模式就只检查fertilizer是否充足，在planting seeds就只检查seeds是否充足
 
-
-TODO 用户测试中发现了问题，完成planting seeds模式后，将种子放入对应的dump箱子中时，会将玩家背包中多余的fertilizer或soil也放进去
-
 将原本的使用一个按键选择一个模式改为 使用一个按键选择从某个模式开始并自动执行后续多个模式。举例：
 按下“1”则选择从placing soil模式开始并自动执行后续fertilizing、planting seeds、watering模式
 按下“2”则选择从fertilizing模式开始并自动执行后续planting seeds、watering模式
 按下“3”则选择从planting seeds模式开始并自动执行后续watering模式
 
-为
+箱子满的判断条件是箱子中没有空槽位，且仅有少于或等于1个槽位中的补充的物品（soil，fertilizer，seeds）数量小于64，其余空槽位均被64个需要补充的物品填满。
+而测试中检测到箱子已经达到满的条件了，log信息也输出：
+[Supply] soil missing 26. Buying 26...
+但是脚本还在执行购买补货操作。
+如果是一群来自Apple的顶级工程师，他们会如何分析该问题并给出解决方案？
+完成代码修改后不要使用lsp
+
+补充种子时，只要3次trips都是有效的，则在3次trips后若依然not full，也可以开始执行后续步骤
+[Supply] seeds not full after 3 trips.
+[Supply] Pre-check failed.
+
+TODO 用户测试中发现了问题，完成planting seeds模式后，将种子放入对应的dump箱子中时，会将玩家背包中多余的fertilizer或soil也放进去
 
 如果是一群来自Apple的顶级工程师，他们会如何根据当前项目代码库实现该修改需求？
-完成代码修改后不要使用lsp
+
 
 ## rerequirement-8
