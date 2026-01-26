@@ -138,6 +138,9 @@ function isInventoryFull() {
 function transferItemsToChest(chestPoses, itemsToTransfer) {
     const player = Player.getPlayer();
 
+    KeyBind.keyBind("key.attack", false);
+    Client.waitTick(5);
+
     for (let i = 0; i < chestPoses.length; i++) {
         // 从上次使用的箱子开始
         const currentIndex = (State.lastUsedChestIndex + i) % chestPoses.length;
