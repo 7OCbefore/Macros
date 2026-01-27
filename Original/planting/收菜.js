@@ -28,6 +28,8 @@ const Config = {
     CHEST_WAIT_TICKS: 34,
     INV_CLOSE_WAIT_TICKS: 6,
     ATTACK_WAIT_TICKS: 1,
+    CANCEL_ATTACK_COUNT: 2,
+    CANCEL_ATTACK_WAIT_TICKS: 10,
     MOVE_WAIT_TICKS: 1,
     LOOK_SMOOTH_SPEED: 0.25,
 };
@@ -49,6 +51,7 @@ const movementService = new MovementService({
 // --- State ---
 let State = {
     lastUsedChestIndex: 0,
+    lastAttackPos: null,
 };
 
 // --- Data Structures ---
@@ -135,11 +138,16 @@ function isInventoryFull() {
 }
 
 
+function cancelAttackWithAir(pos) {
+    if (!pos) {
+        return;
+    }
+    Player.getInteractionManager().attack(pos.x, pos.y + 2, pos.z, 1, false);
+    Client.waitTick(Config.CANCEL_ATTACK_WAIT_TICKS);
+}
+
 function transferItemsToChest(chestPoses, itemsToTransfer) {
     const player = Player.getPlayer();
-
-    KeyBind.keyBind("key.attack", false);
-    Client.waitTick(5);
 
     for (let i = 0; i < chestPoses.length; i++) {
         // 从上次使用的箱子开始
@@ -225,8 +233,10 @@ function snakeWalk(startPos, endPos, chestPos, itemsToTransfer, playerName) {
         moveToBlock(Point3D(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5));
         Player.getInteractionManager().attack(pos.x, pos.y, pos.z, 1, false);
         Client.waitTick(Config.ATTACK_WAIT_TICKS);
+        State.lastAttackPos = Point3D(pos.x, pos.y, pos.z);
 
         if (isInventoryFull()) {
+            cancelAttackWithAir(State.lastAttackPos);
             transferItemsToChest(chestPos, itemsToTransfer);
         }
     }
