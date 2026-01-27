@@ -1,45 +1,43 @@
-=== Container 1 (솋솙솎손솒솔솕솗꣥) ===
-
 Slot 0: 空气
-Slot 1: ꢴ Chilli
-Slot 2: ꢴ Chilli
-Slot 3: ꢴ Chilli
+Slot 1: ꢴ Corn
+Slot 2: ꢴ Corn
+Slot 3: ꢴ Corn
 Slot 4: Previous page
 Slot 5: 空气
 Slot 6: 空气
 Slot 7: 空气
 Slot 8: 空气
 Slot 9: 空气
-Slot 10: ꢳ Chilli
-Slot 11: ꢳ Chilli
-Slot 12: ꢳ Chilli
+Slot 10: ꢳ Corn
+Slot 11: ꢳ Corn
+Slot 12: ꢳ Corn
 Slot 13: Previous page
 Slot 14: 空气
 Slot 15: 空气
 Slot 16: 空气
 Slot 17: 空气
 Slot 18: 空气
-Slot 19: ꢲ Chilli
-Slot 20: ꢲ Chilli
-Slot 21: ꢲ Chilli
+Slot 19: ꢲ Corn
+Slot 20: ꢲ Corn
+Slot 21: ꢲ Corn
 Slot 22: Previous page
 Slot 23: 空气
 Slot 24: 空气
 Slot 25: 空气
 Slot 26: 空气
 Slot 27: 空气
-Slot 28: Golden Chilli
-Slot 29: Golden Chilli
-Slot 30: Golden Chilli
+Slot 28: Golden Corn
+Slot 29: Golden Corn
+Slot 30: Golden Corn
 Slot 31: Next page
 Slot 32: 空气
 Slot 33: 空气
 Slot 34: 空气
 Slot 35: 空气
 Slot 36: 空气
-Slot 37: Chilli Seeds
-Slot 38: Chilli Seeds
-Slot 39: Chilli Seeds
+Slot 37: Corn Seeds
+Slot 38: Corn Seeds
+Slot 39: Corn Seeds
 Slot 40: Next page
 Slot 41: 空气
 Slot 42: 空气
@@ -49,63 +47,6 @@ Slot 45: 空气
 Slot 46: Apple Seeds
 Slot 47: Apple Seeds
 Slot 48: Apple Seeds
-Slot 49: Next page
-Slot 50: 空气
-Slot 51: 空气
-Slot 52: 空气
-Slot 53: 空气
-
-=== Container 2 (솋솙속솏솑솓솕솗꣤) ===
-
-Slot 0: 空气
-Slot 1: Banana Seeds
-Slot 2: Banana Seeds
-Slot 3: Banana Seeds
-Slot 4: Previous page
-Slot 5: 空气
-Slot 6: 空气
-Slot 7: 空气
-Slot 8: 空气
-Slot 9: 空气
-Slot 10: Corn Seeds
-Slot 11: Corn Seeds
-Slot 12: Corn Seeds
-Slot 13: Previous page
-Slot 14: 空气
-Slot 15: 空气
-Slot 16: 空气
-Slot 17: 空气
-Slot 18: 空气
-Slot 19: Eggplant Seeds
-Slot 20: Eggplant Seeds
-Slot 21: Eggplant Seeds
-Slot 22: Previous page
-Slot 23: 空气
-Slot 24: 空气
-Slot 25: 空气
-Slot 26: 空气
-Slot 27: 空气
-Slot 28: Lettuce Seeds
-Slot 29: Lettuce Seeds
-Slot 30: Lettuce Seeds
-Slot 31: Next page
-Slot 32: 空气
-Slot 33: 空气
-Slot 34: 空气
-Slot 35: 空气
-Slot 36: 空气
-Slot 37: Mango Pit
-Slot 38: Mango Pit
-Slot 39: Mango Pit
-Slot 40: Next page
-Slot 41: 空气
-Slot 42: 空气
-Slot 43: 空气
-Slot 44: 空气
-Slot 45: 空气
-Slot 46: Pineapple Seeds
-Slot 47: Pineapple Seeds
-Slot 48: Pineapple Seeds
 Slot 49: Next page
 Slot 50: 空气
 Slot 51: 空气
